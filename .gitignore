@@ -1,0 +1,25 @@
+# Build
+bin/
+obj/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# Visual Studio
+.vs/
+
+# Logs
+*.log
+
+# Others
+*.dbmdl
+*.bak
+*.ncb
+*.opendb
+*.VC.db
