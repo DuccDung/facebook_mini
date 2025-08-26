@@ -39,5 +39,11 @@ namespace authentication_service.Controllers
             };
             return Ok(new { Message = "Login endpoint hit", AccountInfo = acc_info });
         }
+        [HttpGet]
+        [Route("/api/test")]
+        public async Task<IActionResult> Test()
+        {
+            return Ok(new { Message = "Test endpoint hit" });
+        }
     }
 }

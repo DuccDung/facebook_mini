@@ -1,0 +1,26 @@
+services:
+  authentication_service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0   # dùng SDK để watch
+    working_dir: /src/authentication_service
+    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8080"
+    volumes:
+      # mount nguyên code vào container
+      - ./authentication_service:/src/authentication_service
+      # nếu có ProjectReference tới infrastructure thì mount luôn
+      - ./infrastructure:/src/infrastructure
+      # cache nuget (tăng tốc)
+      - nuget_cache:/root/.nuget/packages
+      # (khuyến nghị) persist DataProtection keys
+      - ./dataprotection_keys:/keys
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SqlServer=Server=mssql,1433;Database=Authentication;User Id=sa;Password=Dung@123;TrustServerCertificate=True;
+      - Redis__ConnectionString=host.docker.internal:6379
+      - Redis__ServicePrefix=auth
+    ports:
+      - "5001:8080"
+    # không cần build ở chế độ dev (image đã là SDK)
+
+volumes:
+  nuget_cache:

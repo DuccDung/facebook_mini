@@ -1,30 +1,41 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
+﻿# ===== base (runtime) =====
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
+# EXPOSE 8081  # chỉ mở nếu bạn chạy thêm HTTPS trong container
+# (khuyên dùng HTTP trong container, HTTPS ở reverse proxy/gateway)
 
-
-# This stage is used to build the service project
+# ===== build =====
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["authentication_service/authentication_service.csproj", "authentication_service/"]
-RUN dotnet restore "./authentication_service/authentication_service.csproj"
-COPY . .
-WORKDIR "/src/authentication_service"
-RUN dotnet build "./authentication_service.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+# 1) COPY chỉ các .csproj trước (để cache layer restore)
+#    ĐƯỜNG DẪN bên trái là từ ROOT SOLUTION (build context = root)
+COPY ["authentication_service/authentication_service.csproj", "authentication_service/"]
+
+# Nếu project có tham chiếu đến shared/infrastructure, thêm dòng này:
+# (nếu không có ProjectReference đó thì bỏ dòng này đi)
+COPY ["authentication_service/authentication_service.csproj", "authentication_service/"]
+COPY ["infrastructure/infrastructure.csproj", "infrastructure/"]
+
+# 2) restore
+RUN dotnet restore "authentication_service/authentication_service.csproj"
+
+# 3) COPY toàn bộ source
+COPY . .
+WORKDIR /src/authentication_service
+
+# 4) build
+RUN dotnet build "authentication_service.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# ===== publish =====
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./authentication_service.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "authentication_service.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+# ===== final =====
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "authentication_service.dll"]
+ENTRYPOINT ["dotnet","authentication_service.dll"]
