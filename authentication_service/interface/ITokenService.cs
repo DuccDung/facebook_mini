@@ -1,7 +1,10 @@
-﻿namespace authentication_service.Internal
+﻿using authentication_service.Dtos;
+
+namespace authentication_service.Internal
 {
     public interface ITokenService
     {
-        Task<string> GenerateToken(string userId, string role);
+        Task<TokenResponse> GenerateToken(int userId);
+        Task<string> GenerateRefreshTokenAsync();
     }
 }

@@ -1,4 +1,5 @@
-﻿using authorization_service.Internal;
+﻿using authorization_service.Dtos;
+using authorization_service.Internal;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +21,12 @@ namespace authorization_service.Controllers
         {
             var has = await _authz.HasPermissionAsync(userId, assetId, permission, ct);
             return Ok(new { UserId = userId, AssetId = assetId, Permission = permission, HasPermission = has });
+        }
+        [HttpPost("user-asset-roles")]
+        public async Task<IActionResult> CreateUserAssetRole([FromBody] CreateUserAssetRoleRequest req, CancellationToken ct)
+        {
+            await _authz.GrantRoleAsync(req.GrantedBy, req.UserId, req.AssetId, req.RoleId, ct);
+            return Ok(new { Message = "Role granted successfully" });
         }
     }
 }
