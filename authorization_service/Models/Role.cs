@@ -22,4 +22,6 @@ public partial class Role
     public virtual AssetType AssetType { get; set; } = null!;
 
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
+
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
 }

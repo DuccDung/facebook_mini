@@ -24,6 +24,7 @@ public partial class AuthorizationContext : DbContext
     public virtual DbSet<Permission> Permissions { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
+    public DbSet<RolePermission> RolePermissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +50,9 @@ public partial class AuthorizationContext : DbContext
                 .HasForeignKey(d => d.RoleId)
                 .HasConstraintName("FK_uar_roles");
         });
+
+        modelBuilder.Entity<RolePermission>()
+          .HasKey(rp => new { rp.RoleId, rp.PermissionId });
 
         modelBuilder.Entity<Asset>(entity =>
         {
