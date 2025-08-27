@@ -24,19 +24,13 @@ namespace authentication_service.Controllers
         [Route("/api/login")]
         public async Task<IActionResult> Login(string acc_info, string password)
         {
-            var acc = await _context.Accounts
-                .FirstOrDefaultAsync(a => (a.AccountName == acc_info || a.Email == acc_info) && a.Password == password);
-            if (acc == null)
+            var result = await _authenticationService.Login(acc_info, password);
+            if (!result.IsSussess)
             {
-                return BadRequest(new { Message = "Invalid account information or password." });
+                return Unauthorized(new { result.Message });
             }
-            var response = new Account
-            {
-                AccountId = acc.AccountId,
-                AccountName = acc.AccountName,
-                Email = acc.Email,
-                PhotoUrl = acc.PhotoUrl
-            };
+            //var token = _tokenService.GenerateToken(result.Data.AccountId , );
+
             return Ok(new { Message = "Login endpoint hit", AccountInfo = acc_info });
         }
         [HttpGet]

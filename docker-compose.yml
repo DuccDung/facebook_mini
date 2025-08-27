@@ -42,6 +42,23 @@ services:
     ports:
       - "5001:8080"
 
+  authorization_service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0   
+    working_dir: /src/authorization_service
+    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8081"
+    volumes:
+      - ./authorization_service:/src/authorization_service
+      - ./infrastructure:/src/infrastructure
+      - nuget_cache:/root/.nuget/packages
+      - ./dataprotection_keys:/keys
+    environment:
+      - ASPNETCORE_URLS=http://+:8081
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SqlServer=Server=mssql,1433;Database=Authorization;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
+      - Redis__ConnectionString=redis:6379
+      - Redis__ServicePrefix=authz
+    ports:
+      - "5002:8081"
 volumes:
   redis_data:
   nuget_cache:

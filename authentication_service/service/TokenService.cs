@@ -14,7 +14,7 @@ namespace authentication_service.service
             _key = config["Jwt:Key"]!;
             _issuer = config["Jwt:Issuer"]!;
         }
-        public Task<string> GenerateToken(string userId, string role)
+        public async Task<string> GenerateToken(string userId, string role)
         {
             var claims = new[]
              {
@@ -34,7 +34,8 @@ namespace authentication_service.service
                 expires: DateTime.UtcNow.AddHours(2),
                 signingCredentials: creds);
 
-            return Task.FromResult(new JwtSecurityTokenHandler().WriteToken(token));
+            await Task.CompletedTask;
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
