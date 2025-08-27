@@ -17,9 +17,6 @@ public partial class AuthenticationContext : DbContext
 
     public virtual DbSet<Account> Accounts { get; set; }
 
-    //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    //    => optionsBuilder.UseSqlServer("Data Source=localhost,1444;Initial Catalog=Authentication;User ID=sa;Password=Dung@123;Trust Server Certificate=True");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>

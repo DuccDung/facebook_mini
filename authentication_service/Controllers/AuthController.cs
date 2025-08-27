@@ -43,6 +43,7 @@ namespace authentication_service.Controllers
         [Route("/api/test")]
         public async Task<IActionResult> Test()
         {
+            await Task.CompletedTask;
             return Ok(new { Message = "Test endpoint hit" });
         }
     }
