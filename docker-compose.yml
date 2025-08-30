@@ -24,6 +24,23 @@ services:
       timeout: 3s
       retries: 20
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"      # AMQP
+      - "15672:15672"    # UI http://localhost:15672  (user/pass mặc định: guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   authentication_service:
     image: mcr.microsoft.com/dotnet/sdk:8.0   
     working_dir: /src/authentication_service
@@ -62,4 +79,5 @@ services:
 volumes:
   redis_data:
   nuget_cache:
+  rabbitmq_data:
   social_network_server_mssql_data:
