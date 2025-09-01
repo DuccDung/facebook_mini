@@ -6,6 +6,6 @@ namespace authentication_service.Internal
     public interface IAuthentication
     {
         Task<ResponseModel<Account>> Login(string acc_info, string password);
-
+        Task<ResponseModel<Account>> SignIn(string name, string email, string password);
     }
 }

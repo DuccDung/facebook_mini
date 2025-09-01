@@ -22,10 +22,6 @@ namespace infrastructure
 
             return services;
         }
-        public static IServiceCollection AddRabbitMqService(this IServiceCollection services)
-        {
-            services.AddSingleton<IRabitMqService, RabitMqService>();
-            return services;
-        }
+        
     }
 }

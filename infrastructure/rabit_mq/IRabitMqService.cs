@@ -7,11 +7,10 @@ using System.Threading.Tasks;
 
 namespace infrastructure.rabit_mq
 {
-    public interface IRabitMqService
+    public interface IRabitMqService : IDisposable
     {
-        void SendMessage(string message, string queueName, string exchange = "");
-        void ReceiveMessage(string queueName);
-        void ConfigureQueue(string queueName, bool durable = true, bool exclusive = false, bool autoDelete = false);
-        IConnection GetConnection(string hostName, string userName, string password);
+        void Publish(IModel _channel, string message, string? routingKey = null, string? exchange = null);
+        IModel CreateChannel();
+        IConnection GetConnection();
     }
 }

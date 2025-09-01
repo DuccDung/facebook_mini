@@ -34,5 +34,45 @@ namespace authentication_service.service
                 Data = account
             };
         }
+
+        public async Task<ResponseModel<Account>> SignIn(string name, string email, string password)
+        {
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            {
+                return new ResponseModel<Account>
+                {
+                    IsSussess = false,
+                    Message = "Name, email, and password are required.",
+                    Data = null
+                };
+            }
+
+            var existingAccount = await _context.Accounts
+                .AnyAsync(a => a.AccountName == name || a.Email == email);
+            if (existingAccount)
+            {
+                return new ResponseModel<Account>
+                {
+                    IsSussess = false,
+                    Message = "Account name or email already exists.",
+                    Data = null
+                };
+            }
+            var newAccount = new Account
+            {
+                AccountName = name,
+                Email = email,
+                Password = password
+            };
+            _context.Accounts.Add(newAccount);
+            await _context.SaveChangesAsync();
+
+            return new ResponseModel<Account>
+            {
+                IsSussess = true,
+                Message = "Account created successfully.",
+                Data = newAccount
+            };
+        }
     }
 }

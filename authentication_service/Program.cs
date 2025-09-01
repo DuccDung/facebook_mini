@@ -1,10 +1,11 @@
-using authentication_service.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using authentication_service.Internal;
+using authentication_service.Models;
 using authentication_service.service;
 using infrastructure;
+using infrastructure.rabit_mq;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,13 +41,11 @@ builder.Services.AddInfrastructure(
     builder.Configuration["Redis:ConnectionString"] ?? "",
     builder.Configuration["Redis:ServicePrefix"] ?? ""
 );
-
 Console.WriteLine(">>> SQL Connection String: " + builder.Configuration.GetConnectionString("SqlServer"));
 
 // add scode generation service
 builder.Services.AddScoped<IAuthentication, AuthticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

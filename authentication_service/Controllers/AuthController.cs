@@ -1,6 +1,7 @@
 ﻿using authentication_service.Internal;
 using authentication_service.Models;
 using infrastructure.caching;
+using infrastructure.rabit_mq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -61,11 +62,16 @@ namespace authentication_service.Controllers
         }
 
         [HttpGet]
-        [Route("/api/test")]
-        public async Task<IActionResult> Test()
+        [Route("/api/sign-in")]
+        public async Task<IActionResult> SignIn(string name , string email, string password)
         {
+            var result = await _authenticationService.SignIn(name, email, password);
+            if (!result.IsSussess || result.Data == null)
+            {
+                return BadRequest(new { result.Message });
+            }
             await Task.CompletedTask;
-            return Ok(new { Message = "Test endpoint hit" });
+            return Ok(new { Message = "Sign-in pendding confirm email !", name = name });
         }
     }
 }
