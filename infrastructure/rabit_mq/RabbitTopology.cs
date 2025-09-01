@@ -9,7 +9,7 @@ namespace infrastructure.rabit_mq
 {
     internal class RabbitTopology : IRabbitTopology
     {
-        public void EnsureTopology(IModel channel, RabbitOptions options)
+        public void EnsureTopology(IModel channel, TopologyOption options)
         {
             // Exchange chính
             channel.ExchangeDeclare(options.Exchange, options.ExchangeType, durable: true);

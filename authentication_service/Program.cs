@@ -1,4 +1,4 @@
-using authentication_service.Internal;
+﻿using authentication_service.Internal;
 using authentication_service.Models;
 using authentication_service.service;
 using infrastructure;
@@ -6,6 +6,7 @@ using infrastructure.rabit_mq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,40 @@ Console.WriteLine(">>> SQL Connection String: " + builder.Configuration.GetConne
 // add scode generation service
 builder.Services.AddScoped<IAuthentication, AuthticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+// add rabbitmq service
+var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
+var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
+var rabbitPort = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var p) ? p : 5672;
+
+builder.Services.AddRabbitCore(opt =>
+{
+    opt.HostName = rabbitHost;
+    opt.UserName = rabbitUser;
+    opt.Password = rabbitPass;
+    opt.Port = rabbitPort;
+});
+
+// Đăng ký theo tên
+builder.Services.Configure<TopologyOption>("user-registered", o =>
+{
+    o.Exchange = "mail.exchange";
+    o.ExchangeType = RabbitMQ.Client.ExchangeType.Direct;
+    o.Queue = "mail.user-registered.q";
+    o.RoutingKey = "mail.user-registered";
+    o.Dlx = "mail.dlx";
+    o.Dlq = "mail.user-registered.dlq";
+});
+
+builder.Services.Configure<TopologyOption>("resetpwd", o =>
+{
+    o.Exchange = "mail.exchange";
+    o.ExchangeType = RabbitMQ.Client.ExchangeType.Direct;
+    o.Queue = "mail.resetpwd.q";
+    o.RoutingKey = "mail.resetpwd";
+    o.Dlx = "mail.dlx";
+    o.Dlq = "mail.resetpwd.dlq";
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

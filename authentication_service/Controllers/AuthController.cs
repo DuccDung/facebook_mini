@@ -5,6 +5,7 @@ using infrastructure.rabit_mq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace authentication_service.Controllers
 {
@@ -16,12 +17,16 @@ namespace authentication_service.Controllers
         private readonly ITokenService _tokenService;
         private readonly AuthenticationContext _context;
         private readonly ICacheService _cache;
-        public AuthController(IAuthentication authenticationService, AuthenticationContext context, ITokenService tokenService , ICacheService cache)
+        private readonly IRabitMqService _rabitMqService;
+        private readonly IOptionsMonitor<TopologyOption> _topos;
+        public AuthController(IAuthentication authenticationService, AuthenticationContext context, ITokenService tokenService , ICacheService cache, IRabitMqService mq, IOptionsMonitor<TopologyOption> topos)
         {
             _authenticationService = authenticationService;
             _context = context;
             _tokenService = tokenService;
             _cache = cache;
+            _rabitMqService = mq;
+            _topos = topos;
         }
         [HttpGet]
         [Route("/api/login")]
@@ -70,6 +75,13 @@ namespace authentication_service.Controllers
             {
                 return BadRequest(new { result.Message });
             }
+            // publish -> email_service
+            using var ch = _rabitMqService.CreateChannel();
+            var topo = _topos.Get("user-registered");
+            var json = System.Text.Json.JsonSerializer.Serialize(new { email, at = DateTime.UtcNow });
+            _rabitMqService.Bind(ch, topo);
+            _rabitMqService.Publish(ch, topo, json);
+
             await Task.CompletedTask;
             return Ok(new { Message = "Sign-in pendding confirm email !", name = name });
         }

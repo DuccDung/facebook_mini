@@ -1,5 +1,6 @@
-﻿using System.Text;
-using RabbitMQ.Client;
+﻿using RabbitMQ.Client;
+using System.Text;
+using System.Threading.Channels;
 
 namespace infrastructure.rabit_mq
 {
@@ -22,15 +23,15 @@ namespace infrastructure.rabit_mq
             _connection = factory.CreateConnection();
         }
 
-        public void Publish(IModel _channel,string message, string? routingKey = null, string? exchange = null)
+        public void Publish(IModel _channel,TopologyOption topology ,string message, string? routingKey = null, string? exchange = null)
         {
             var body = Encoding.UTF8.GetBytes(message);
             var props = _channel.CreateBasicProperties();
             props.Persistent = true; // để message không mất khi broker restart
 
             _channel.BasicPublish(
-                exchange: exchange ?? _options.Exchange,
-                routingKey: routingKey ?? _options.RoutingKey,
+                exchange: exchange ?? topology.Exchange,
+                routingKey: routingKey ?? topology.RoutingKey,
                 basicProperties: props,
                 body: body
             );
@@ -49,6 +50,11 @@ namespace infrastructure.rabit_mq
         public void Dispose()
         {
             _connection?.Dispose();
+        }
+
+        public void Bind(IModel _channel, TopologyOption topology)
+        {
+            _channel.QueueBind(topology.Queue, topology.Exchange, topology.RoutingKey);
         }
     }
 }

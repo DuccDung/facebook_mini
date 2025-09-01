@@ -9,7 +9,7 @@ namespace infrastructure.rabit_mq
 {
     public interface IRabbitTopology
     {
-        void EnsureTopology(IModel channel, RabbitOptions options);
+        void EnsureTopology(IModel channel, TopologyOption options);
     }
 
 }
