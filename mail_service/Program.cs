@@ -1,7 +1,8 @@
-﻿using infrastructure.rabit_mq;
+﻿using infrastructure;
+using infrastructure.rabit_mq;
+using mail_service.Internal;
 using mail_service.service;
 using RabbitMQ.Client;
-using infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -39,6 +40,8 @@ builder.Services.AddRabbitTopology(new TopologyOption
 });
 
 // Đăng ký BackgroundService consumer
+builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
+builder.Services.AddSingleton<ITemplateRenderer, SimpleTemplateRenderer>();
 builder.Services.AddHostedService<MailConsumerService>();
 
 

@@ -1,10 +1,12 @@
 ﻿
+using infrastructure.rabit_mq;
+using mail_service.Internal;
+using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.Extensions.Hosting;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
-using infrastructure.rabit_mq;
 namespace mail_service.service
 {
     public class MailConsumerService : BackgroundService
@@ -13,12 +15,17 @@ namespace mail_service.service
         private readonly IRabbitTopology _topology;
         private readonly TopologyOption _opt;
         private IModel? _ch;
-
-        public MailConsumerService(IRabitMqService mq, IRabbitTopology topology, TopologyOption opt)
+        private IEmailSender _sender;
+        private ITemplateRenderer _renderer;
+        private readonly ILogger<MailConsumerService> _log;
+        public MailConsumerService(IRabitMqService mq, IRabbitTopology topology, TopologyOption opt, IEmailSender sender, ITemplateRenderer renderer, ILogger<MailConsumerService> log)
         {
             _mq = mq;
             _topology = topology;
             _opt = opt;
+            _sender = sender;
+            _renderer = renderer;
+            _log = log;
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -33,7 +40,7 @@ namespace mail_service.service
             _ch.BasicQos(0, _opt.Prefetch, false);
 
             var consumer = new EventingBasicConsumer(_ch);
-            consumer.Received += (s, ea) =>
+            consumer.Received += async (s, ea) =>
             {
                 try
                 {
@@ -41,7 +48,13 @@ namespace mail_service.service
                     var msg = JsonSerializer.Deserialize<UserRegisteredEvent>(body);
 
                     // TODO: xử lý nghiệp vụ — gửi email xác nhận
-                    Console.WriteLine($"[Mail Service] Gửi email xác nhận cho {msg?.Email} lúc {msg?.At}");
+                    Console.WriteLine($"[Mail Service] Gửi email xác nhận cho {msg?.email} lúc {msg?.at}");
+
+                    if(msg != null) // send mail
+                    {
+                        var html = _renderer.RenderSignUpConfirm(msg.email, "null", msg.at);
+                        await _sender.SendAsync(msg.email, "Xác nhận email đăng ký", html, stoppingToken);
+                    }
 
                     // Thông báo đã xử lý xong
                     _ch.BasicAck(ea.DeliveryTag, false);
@@ -69,6 +82,6 @@ namespace mail_service.service
     }
 
     // Model sự kiện
-    public record UserRegisteredEvent(string Email, DateTime At);
+    public record UserRegisteredEvent(string email, DateTime at);
 
 }

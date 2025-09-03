@@ -29,17 +29,32 @@ services:
     container_name: rabbitmq
     ports:
       - "5672:5672"      # AMQP
-      - "15672:15672"    # UI http://localhost:15672  (user/pass mặc định: guest/guest)
+      - "15672:15672"    # UI
+      - "1883:1883"      # MQTT (TCP)
+      - "15675:15675"    # MQTT over WebSocket (WS)
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      # (tùy chọn) cấu hình riêng
+      # - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
+    command: >
+      bash -lc "
+      rabbitmq-plugins enable --offline rabbitmq_mqtt rabbitmq_web_mqtt &&
+      rabbitmq-server"
+
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
 
   authentication_service:
     image: mcr.microsoft.com/dotnet/sdk:8.0   
@@ -84,10 +99,10 @@ services:
   
   mail_service:
    image: mcr.microsoft.com/dotnet/sdk:8.0   
-   working_dir: /src/platform_services/mail_service
-   command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8082"
+   working_dir: /src/mail_service
+   command: bash -lc "rm -rf /src/mail_service/bin /src/mail_service/obj && dotnet restore /src/mail_service/mail_service.csproj && dotnet watch --project /src/mail_service/mail_service.csproj run --urls http://0.0.0.0:8082"
    volumes:
-      - ./mail_service:/src/platform_services/mail_service
+      - ./mail_service:/src/mail_service
       - ./infrastructure:/src/infrastructure
       - nuget_cache:/root/.nuget/packages
       - ./dataprotection_keys:/keys
@@ -98,6 +113,14 @@ services:
       RABBITMQ_USER: "guest"
       RABBITMQ_PASS: "guest"
       RABBITMQ_PORT: "5672"
+
+      Smtp__Host: smtp.gmail.com
+      Smtp__Port: "587"
+      Smtp__UseStartTls: "true"
+      Smtp__User: "duccdung999@gmail.com"
+      Smtp__Pass: "epwzvvnaxqybdqlc"
+      Email__FromName: "Social Network"
+      Email__FromAddress: "duccdung999@gmail.com"
    ports:
     - "5003:8082"
 
