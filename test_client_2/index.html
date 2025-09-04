@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8" />
+  <title>MQTT Chat – User A</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      max-width: 720px;
+      margin: 20px auto
+    }
+
+    .log {
+      border: 1px solid #ddd;
+      height: 320px;
+      overflow: auto;
+      padding: 8px;
+      border-radius: 8px
+    }
+
+    input,
+    button {
+      padding: .6rem .8rem;
+      border: 1px solid #ccc;
+      border-radius: 8px
+    }
+
+    .row {
+      display: flex;
+      gap: .5rem;
+      margin: .5rem 0
+    }
+
+    .me {
+      color: #0a7;
+    }
+
+    .other {
+      color: #06c;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>MQTT Chat — User A</h2>
+
+  <div class="row">
+    <label>Broker WS:</label>
+    <input id="wsUrl" value="ws://localhost:15675/ws" style="flex:1">
+  </div>
+
+  <div class="row">
+    <label>Room:</label>
+    <input id="roomId" value="123" style="width:120px">
+    <label>User:</label>
+    <input id="userId" value="userA" style="width:120px">
+    <button id="btnConnect">Connect</button>
+  </div>
+
+  <div class="log" id="log"></div>
+
+  <div class="row">
+    <input id="txt" placeholder="Nhập tin nhắn..." style="flex:1">
+    <button id="btnSend">Gửi</button>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let client, topic;
+
+    function uuidv4() {
+      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
+    }
+    function log(html) { const d = $('log'); d.insertAdjacentHTML('beforeend', html); d.scrollTop = d.scrollHeight; }
+
+    $('btnConnect').onclick = () => {
+      const wsUrl = $('wsUrl').value.trim();
+      const userId = $('userId').value.trim();
+      const roomId = $('roomId').value.trim();
+      topic = `chat/room/${roomId}`;
+      if (client?.connected) client.end();
+
+      client = mqtt.connect(wsUrl, {
+        username: 'guest',
+        password: 'guest',
+        reconnectPeriod: 2000, // ms
+      });
+
+      client.on('connect', () => {
+        log(`<div>✅ Connected. Subscribed: <b>${topic}</b></div>`);
+        client.subscribe(topic, { qos: 1 });
+      });
+
+      client.on('reconnect', () => log('<div>…reconnecting…</div>'));
+      client.on('error', (e) => log(`<div>❌ ${e.message}</div>`));
+
+      client.on('message', (tp, buf) => {
+        const msg = JSON.parse(buf.toString());
+        const mine = msg.senderId === userId;
+        const who = mine ? 'Me' : msg.senderId;
+        log(`<div class="${mine ? 'me' : 'other'}">[${who}] ${msg.text} <small>${new Date(msg.ts).toLocaleTimeString()}</small></div>`);
+      });
+
+      $('btnSend').onclick = () => {
+        if (!client?.connected) return log('<div>⚠️ Not connected</div>');
+        const text = $('txt').value.trim();
+        if (!text) return;
+        const payload = JSON.stringify({
+          messageId: uuidv4(),
+          roomId, senderId: userId, text,
+          type: 'text', ts: Date.now()
+        });
+        client.publish(topic, payload, { qos: 1 });
+        $('txt').value = '';
+      };
+    };
+  </script>
+</body>
+
+</html>

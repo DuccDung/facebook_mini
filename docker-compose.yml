@@ -28,17 +28,15 @@ services:
     image: rabbitmq:3.13-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"      # AMQP
-      - "15672:15672"    # UI
-      - "1883:1883"      # MQTT (TCP)
-      - "15675:15675"    # MQTT over WebSocket (WS)
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # UI
+      - "1883:1883"     # MQTT (TCP)
+      - "15675:15675"   # MQTT over WebSocket
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-      # (tùy chọn) cấu hình riêng
-      # - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
@@ -47,7 +45,8 @@ services:
     command: >
       bash -lc "
       rabbitmq-plugins enable --offline rabbitmq_mqtt rabbitmq_web_mqtt &&
-      rabbitmq-server"
+      rabbitmq-server
+      "
  
   authentication_service:
     image: mcr.microsoft.com/dotnet/sdk:8.0   
