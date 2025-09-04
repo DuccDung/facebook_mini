@@ -47,7 +47,6 @@ namespace mail_service.service
                     var body = Encoding.UTF8.GetString(ea.Body.ToArray());
                     var msg = JsonSerializer.Deserialize<UserRegisteredEvent>(body);
 
-                    // TODO: xử lý nghiệp vụ — gửi email xác nhận
                     Console.WriteLine($"[Mail Service] Gửi email xác nhận cho {msg?.email} lúc {msg?.at}");
 
                     if(msg != null) // send mail
@@ -56,14 +55,11 @@ namespace mail_service.service
                         await _sender.SendAsync(msg.email, "Xác nhận email đăng ký", html, stoppingToken);
                     }
 
-                    // Thông báo đã xử lý xong
                     _ch.BasicAck(ea.DeliveryTag, false);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[Mail Service] Lỗi xử lý: {ex.Message}");
-
-                    // Lỗi business → đẩy vào DLQ, không requeue
                     _ch.BasicNack(ea.DeliveryTag, false, requeue: false);
                 }
             };
@@ -81,7 +77,6 @@ namespace mail_service.service
         }
     }
 
-    // Model sự kiện
     public record UserRegisteredEvent(string email, DateTime at);
 
 }

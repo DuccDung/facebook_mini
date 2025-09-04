@@ -2,8 +2,6 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 8080
-# EXPOSE 8081  # chỉ mở nếu bạn chạy thêm HTTPS trong container
-# (khuyên dùng HTTP trong container, HTTPS ở reverse proxy/gateway)
 
 # ===== build =====
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
