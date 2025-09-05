@@ -32,7 +32,7 @@ builder.Services.AddRabbitTopology(new TopologyOption
 {
     Exchange = "mail.exchange",
     ExchangeType = ExchangeType.Direct,
-    Queue = "mail.user-registered.q",  // Queue riêng để nhận sự kiện user-registered
+    Queue = "mail.user-registered.q", 
     RoutingKey = "user-registered",
     Dlx = "mail.dlx",
     Dlq = "mail.user-registered.dlq",

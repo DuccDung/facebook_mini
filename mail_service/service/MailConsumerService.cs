@@ -66,7 +66,7 @@ namespace mail_service.service
 
             // Bắt đầu consume
             _ch.BasicConsume(queue: _opt.Queue, autoAck: false, consumer: consumer);
-
+             
             return Task.CompletedTask;
         }
 
