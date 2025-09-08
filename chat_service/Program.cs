@@ -1,9 +1,7 @@
-using chat_service.Models;
-using chat_service.service;
+﻿using chat_service.Models;
 using infrastructure;
 using infrastructure.rabit_mq;
 using RabbitMQ.Client;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -25,6 +23,27 @@ builder.Services.AddRabbitCore(opt =>
     opt.UserName = rabbitUser;
     opt.Password = rabbitPass;
     opt.Port = rabbitPort;
+});
+builder.Services.AddInfrastructure(
+    builder.Configuration["Redis:ConnectionString"] ?? "",
+    builder.Configuration["Redis:ServicePrefix"] ?? ""
+);
+
+// Đăng ký topology service
+builder.Services.AddRabbitTopology();
+
+// Cấu hình NHIỀU bộ options bằng tên:
+builder.Services.Configure<TopologyOption>("chat_mqtt", o =>
+{
+    o.Exchange = "amq.topic";
+    o.ExchangeType = RabbitMQ.Client.ExchangeType.Topic;
+    o.Queue = "chat.user-chat.q";
+    o.RoutingKey = "chat.room.#";
+    o.Dlx = "chat.dlx";
+    o.Dlq = "chat.user-chat.dlq";
+    o.Prefetch = 10;
+    // ví dụ thêm TTL 10 phút
+    o.QueueArgs = new Dictionary<string, object> { ["x-message-ttl"] = 600_000 };
 });
 
 builder.Services.AddHostedService<ChatConsumerService>();

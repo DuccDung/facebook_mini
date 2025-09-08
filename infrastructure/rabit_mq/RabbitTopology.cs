@@ -1,9 +1,5 @@
 ﻿using RabbitMQ.Client;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace infrastructure.rabit_mq
 {
@@ -11,24 +7,56 @@ namespace infrastructure.rabit_mq
     {
         public void EnsureTopology(IModel channel, TopologyOption options)
         {
-            // Exchange chính
-            channel.ExchangeDeclare(options.Exchange, options.ExchangeType, durable: true);
+            // 1) Exchange chính
+            if (!options.Exchange.Contains("amq"))
+            {
+                channel.ExchangeDeclare(
+                     exchange: options.Exchange,
+                     type: options.ExchangeType,
+                     durable: true
+           );
+            }
 
-            // DLX
-            channel.ExchangeDeclare(options.Dlx, ExchangeType.Direct, durable: true);
 
-            // DLQ
-            channel.QueueDeclare(options.Dlq, durable: true, exclusive: false, autoDelete: false);
-            channel.QueueBind(options.Dlq, options.Dlx, routingKey: options.RoutingKey + ".dlq");
+            // 2) DLX
+            channel.ExchangeDeclare(
+                exchange: options.Dlx,
+                type: options.DlxType,       // dùng type cấu hình
+                durable: true
+            );
 
-            // Queue chính
-            channel.QueueDeclare(options.Queue, durable: true, exclusive: false, autoDelete: false,
-                arguments: new Dictionary<string, object>
-                {
-                    ["x-dead-letter-exchange"] = options.Dlx,
-                    ["x-dead-letter-routing-key"] = options.RoutingKey + ".dlq"
-                });
-            channel.QueueBind(options.Queue, options.Exchange, options.RoutingKey);
+            // 3) DLQ
+            channel.QueueDeclare(
+                queue: options.Dlq,
+                durable: true,
+                exclusive: false,
+                autoDelete: false
+            );
+            channel.QueueBind(
+                queue: options.Dlq,
+                exchange: options.Dlx,
+                routingKey: options.RoutingKey
+            );
+
+            // 4) Queue chính + arguments
+            var args = new Dictionary<string, object>(options.QueueArgs ?? new Dictionary<string, object>());
+            args["x-dead-letter-exchange"] = options.Dlx;
+            args["x-dead-letter-routing-key"] = options.RoutingKey;
+
+            channel.QueueDeclare(
+                queue: options.Queue,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,  
+                arguments: args
+            );
+
+            // 5) Bind queue chính
+            channel.QueueBind(
+                queue: options.Queue,
+                exchange: options.Exchange,
+                routingKey: options.RoutingKey
+            );
         }
     }
 }
