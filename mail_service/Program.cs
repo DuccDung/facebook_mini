@@ -28,15 +28,16 @@ builder.Services.AddRabbitCore(opt =>
 
 
 // Đăng ký topology cho queue mà mail_service SỞ HỮU
-builder.Services.AddRabbitTopology(new TopologyOption
+builder.Services.AddRabbitTopology(); // Đăng ký topology service
+builder.Services.Configure<TopologyOption>("mail_user_registered", o =>
 {
-    Exchange = "mail.exchange",
-    ExchangeType = ExchangeType.Direct,
-    Queue = "mail.user-registered.q", 
-    RoutingKey = "user-registered",
-    Dlx = "mail.dlx",
-    Dlq = "mail.user-registered.dlq",
-    Prefetch = 16
+    o.Exchange = "mail.exchange";
+    o.ExchangeType = ExchangeType.Direct;
+    o.Queue = "mail.user-registered.q"; // Tên queue
+    o.RoutingKey = "user-registered"; // routing key
+    o.Dlx = "mail.dlx";
+    o.Dlq = "mail.user-registered.dlq";
+    o.Prefetch = 16;
 });
 
 // Đăng ký BackgroundService consumer

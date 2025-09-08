@@ -3,6 +3,7 @@ using infrastructure.rabit_mq;
 using mail_service.Internal;
 using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
@@ -13,16 +14,16 @@ namespace mail_service.service
     {
         private readonly IRabitMqService _mq;
         private readonly IRabbitTopology _topology;
-        private readonly TopologyOption _opt;
+        private readonly IOptionsMonitor<TopologyOption> _options;
         private IModel? _ch;
         private IEmailSender _sender;
         private ITemplateRenderer _renderer;
         private readonly ILogger<MailConsumerService> _log;
-        public MailConsumerService(IRabitMqService mq, IRabbitTopology topology, TopologyOption opt, IEmailSender sender, ITemplateRenderer renderer, ILogger<MailConsumerService> log)
+        public MailConsumerService(IRabitMqService mq, IRabbitTopology topology, IOptionsMonitor<TopologyOption> options, IEmailSender sender, ITemplateRenderer renderer, ILogger<MailConsumerService> log)
         {
             _mq = mq;
             _topology = topology;
-            _opt = opt;
+            _options = options;
             _sender = sender;
             _renderer = renderer;
             _log = log;
@@ -30,14 +31,9 @@ namespace mail_service.service
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Tạo channel riêng cho consumer
             _ch = _mq.CreateChannel();
-
-            // Consumer sở hữu queue → khai báo topology cho chắc chắn
-            _topology.EnsureTopology(_ch, _opt);
-
-            // Prefetch = số message chưa xử lý được giữ trong consumer
-            _ch.BasicQos(0, _opt.Prefetch, false);
+            _topology.EnsureTopology(_ch, _options.Get("mail_user_registered"));
+            _ch.BasicQos(0, _options.Get("mail_user_registered").Prefetch, false);
 
             var consumer = new EventingBasicConsumer(_ch);
             consumer.Received += async (s, ea) =>
@@ -65,7 +61,7 @@ namespace mail_service.service
             };
 
             // Bắt đầu consume
-            _ch.BasicConsume(queue: _opt.Queue, autoAck: false, consumer: consumer);
+            _ch.BasicConsume(queue: _options.Get("mail_user_registered").Queue, autoAck: false, consumer: consumer);
              
             return Task.CompletedTask;
         }
