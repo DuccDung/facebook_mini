@@ -2,6 +2,8 @@
 using infrastructure;
 using infrastructure.rabit_mq;
 using RabbitMQ.Client;
+using Grpc.Core;
+using AuthorizationProto;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -10,8 +12,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddGrpcClient<AuthorizationGrpcService.AuthorizationGrpcServiceClient>(option => {
+    option.Address = new Uri("https://localhost:7266");
+});
 builder.Services.AddSqlServer<TextingServicesContext>(builder.Configuration.GetConnectionString("SqlServer"));
-
 var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
 var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
 var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";

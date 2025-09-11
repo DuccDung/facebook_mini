@@ -1,0 +1,17 @@
+﻿syntax = "proto3";
+option csharp_namespace = "AuthorizationProto";
+
+service AuthorizationGrpcService {
+  rpc IsRoleConversation (RoleConversationRequest) returns (RoleConversationReply);
+}
+
+message RoleConversationRequest {
+  string userId = 1;
+  string assetId = 2;
+}
+
+message RoleConversationReply {
+  bool success = 1;
+  string message = 2;
+  string role = 3;
+}
