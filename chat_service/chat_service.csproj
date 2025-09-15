@@ -32,10 +32,6 @@
   <ItemGroup>
     <ProjectReference Include="..\infrastructure\infrastructure.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
 	<ItemGroup>
 		<Protobuf Include="Protos\authorization.proto" GrpcServices="Client" />
 	</ItemGroup>
