@@ -2,6 +2,7 @@
 using authorization_service.Models;
 using infrastructure.caching;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace authorization_service.service
 {
@@ -16,24 +17,46 @@ namespace authorization_service.service
         }
         public async Task<IReadOnlyCollection<string>> GetEffectivePermissionsAsync(int userId, int assetId, CancellationToken ct = default)
         {
-            var key = $"perms:{userId}:{assetId}";
-            var cached = await _cache.GetAsync<string[]>(key);
-            if (cached is not null) return cached;
+			//         var key = $"perms:{userId}:{assetId}";
+			//         var cached = await _cache.GetAsync<string[]>(key);
+			//         if (cached is not null) return cached;
 
-            var list = await (from uar in _db.AccountAssetRoles
-                              where uar.UserId == userId && uar.AssetId == assetId
-                              join r in _db.Roles on uar.RoleId equals r.RoleId
-                              join rp in _db.RolePermissions on r.RoleId equals rp.RoleId
-                              join p in _db.Permissions on rp.PermissionId equals p.PermissionId
-                              join a in _db.Assets on uar.AssetId equals a.AssetId
-                              where r.AssetTypeId == a.AssetTypeId
-                              select p.Code)
-                              .Distinct()
-                              .ToArrayAsync(ct);
+			//         var list = await (from uar in _db.AccountAssetRoles
+			//                           where uar.UserId == userId && uar.AssetId == assetId
+			//                           join r in _db.Roles on uar.RoleId equals r.RoleId
+			//                           join rp in _db.RolePermissions on r.RoleId equals rp.RoleId
+			//                           join p in _db.Permissions on rp.PermissionId equals p.PermissionId
+			//                           join a in _db.Assets on uar.AssetId equals a.AssetId
+			//                           where r.AssetTypeId == a.AssetTypeId
+			//                           select p.Code)
+			//                           .Distinct()
+			//.ToArrayAsync(ct);
 
-            await _cache.SetAsync(key, list);
-            return list;
-        }
+			//await _cache.SetAsync(key, list);
+			//         return list;
+			var key = $"perms:{userId}:{assetId}";
+			var cached = await _cache.GetAsync<string[]>(key);
+			if (cached is not null) return cached;
+
+			var query = (from uar in _db.AccountAssetRoles
+						 where uar.UserId == userId && uar.AssetId == assetId
+						 join r in _db.Roles on uar.RoleId equals r.RoleId
+						 join rp in _db.RolePermissions on r.RoleId equals rp.RoleId
+						 join p in _db.Permissions on rp.PermissionId equals p.PermissionId
+						 join a in _db.Assets on uar.AssetId equals a.AssetId
+						 where r.AssetTypeId == a.AssetTypeId
+						 select p.Code)
+						.Distinct();
+
+			// In ra SQL mà EF Core sẽ gửi xuống
+			Console.WriteLine(query.ToQueryString());
+
+			// Thực thi
+			var list = await query.ToArrayAsync(ct);
+
+			await _cache.SetAsync(key, list);
+			return list;
+		}
 
         public async Task<IReadOnlyCollection<string>> GetUserRolesOnAssetAsync(int userId, int assetId, CancellationToken ct = default)
         {

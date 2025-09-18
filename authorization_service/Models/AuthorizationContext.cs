@@ -51,10 +51,28 @@ public partial class AuthorizationContext : DbContext
                 .HasConstraintName("FK_uar_roles");
         });
 
-        modelBuilder.Entity<RolePermission>()
-          .HasKey(rp => new { rp.RoleId, rp.PermissionId });
+		modelBuilder.Entity<RolePermission>(entity =>
+		{
+			entity.HasKey(e => new { e.RoleId, e.PermissionId })
+				  .HasName("PK__role_per__C85A54637233C67B");
 
-        modelBuilder.Entity<Asset>(entity =>
+			entity.ToTable("role_permissions");
+
+			entity.Property(e => e.RoleId).HasColumnName("role_id");
+			entity.Property(e => e.PermissionId).HasColumnName("permission_id");
+
+			entity.HasOne(d => d.Role)
+				  .WithMany(p => p.RolePermissions)
+				  .HasForeignKey(d => d.RoleId)
+				  .HasConstraintName("FK_role_permissions_roles");
+
+			entity.HasOne(d => d.Permission)
+				  .WithMany(p => p.RolePermissions)
+				  .HasForeignKey(d => d.PermissionId)
+				  .HasConstraintName("FK_role_permissions_permissions");
+		});
+
+		modelBuilder.Entity<Asset>(entity =>
         {
             entity.HasKey(e => e.AssetId).HasName("PK__assets__D28B561DE01EF998");
 
@@ -112,54 +130,37 @@ public partial class AuthorizationContext : DbContext
                 .HasColumnName("description");
         });
 
-        modelBuilder.Entity<Role>(entity =>
-        {
-            entity.HasKey(e => e.RoleId).HasName("PK__roles__760965CCDD1E5D23");
+		modelBuilder.Entity<Role>(entity =>
+		{
+			entity.HasKey(e => e.RoleId).HasName("PK__roles__760965CCDD1E5D23");
 
-            entity.ToTable("roles");
+			entity.ToTable("roles");
 
-            entity.HasIndex(e => new { e.AssetTypeId, e.Code }, "UQ_roles_assettype_code").IsUnique();
+			entity.HasIndex(e => new { e.AssetTypeId, e.Code }, "UQ_roles_assettype_code").IsUnique();
 
-            entity.Property(e => e.RoleId).HasColumnName("role_id");
-            entity.Property(e => e.AssetTypeId).HasColumnName("asset_type_id");
-            entity.Property(e => e.Code)
-                .HasMaxLength(100)
-                .IsUnicode(false)
-                .HasColumnName("code");
-            entity.Property(e => e.Description)
-                .HasMaxLength(300)
-                .HasColumnName("description");
-            entity.Property(e => e.IsSystem)
-                .HasDefaultValue(true)
-                .HasColumnName("is_system");
-            entity.Property(e => e.Name)
-                .HasMaxLength(100)
-                .HasColumnName("name");
+			entity.Property(e => e.RoleId).HasColumnName("role_id");
+			entity.Property(e => e.AssetTypeId).HasColumnName("asset_type_id");
+			entity.Property(e => e.Code)
+				.HasMaxLength(100)
+				.IsUnicode(false)
+				.HasColumnName("code");
+			entity.Property(e => e.Description)
+				.HasMaxLength(300)
+				.HasColumnName("description");
+			entity.Property(e => e.IsSystem)
+				.HasDefaultValue(true)
+				.HasColumnName("is_system");
+			entity.Property(e => e.Name)
+				.HasMaxLength(100)
+				.HasColumnName("name");
 
-            entity.HasOne(d => d.AssetType).WithMany(p => p.Roles)
-                .HasForeignKey(d => d.AssetTypeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_roles_asset_types");
+			entity.HasOne(d => d.AssetType).WithMany(p => p.Roles)
+				.HasForeignKey(d => d.AssetTypeId)
+				.OnDelete(DeleteBehavior.ClientSetNull)
+				.HasConstraintName("FK_roles_asset_types");
+		});
 
-            entity.HasMany(d => d.Permissions).WithMany(p => p.Roles)
-                .UsingEntity<Dictionary<string, object>>(
-                    "RolePermission",
-                    r => r.HasOne<Permission>().WithMany()
-                        .HasForeignKey("PermissionId")
-                        .HasConstraintName("FK_role_permissions_permissions"),
-                    l => l.HasOne<Role>().WithMany()
-                        .HasForeignKey("RoleId")
-                        .HasConstraintName("FK_role_permissions_roles"),
-                    j =>
-                    {
-                        j.HasKey("RoleId", "PermissionId").HasName("PK__role_per__C85A54637233C67B");
-                        j.ToTable("role_permissions");
-                        j.IndexerProperty<int>("RoleId").HasColumnName("role_id");
-                        j.IndexerProperty<int>("PermissionId").HasColumnName("permission_id");
-                    });
-        });
-
-        OnModelCreatingPartial(modelBuilder);
+		OnModelCreatingPartial(modelBuilder);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
