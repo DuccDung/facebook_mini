@@ -2,9 +2,17 @@
 option csharp_namespace = "AuthorizationProto";
 
 service AuthorizationGrpcService {
+  // RPC cũ
   rpc IsRoleConversation (RoleConversationRequest) returns (RoleConversationReply);
+
+  // RPC mới
+  rpc HasPermission (HasPermissionRequest) returns (HasPermissionReply);
+  rpc GetPermissions (GetPermissionsRequest) returns (GetPermissionsReply);
+  rpc GrantRole (GrantRoleRequest) returns (GrantRoleReply);
+  rpc RevokeRole (RevokeRoleRequest) returns (RevokeRoleReply);
 }
 
+// --- EXISTING ---
 message RoleConversationRequest {
   string userId = 1;
   string assetId = 2;
@@ -13,5 +21,55 @@ message RoleConversationRequest {
 message RoleConversationReply {
   bool success = 1;
   string message = 2;
-  string role = 3;
+  string role = 3; 
+}
+
+// --- NEW: Permission check ---
+message HasPermissionRequest {
+  string userId = 1;
+  string assetId = 2;
+  string permissionCode = 3;
+}
+
+message HasPermissionReply {
+  bool success = 1;        // request xử lý OK (parse thành công, không crash)
+  bool hasPermission = 2;  // kết quả thực tế
+  string message = 3;
+}
+
+// --- NEW: Get all permissions ---
+message GetPermissionsRequest {
+  string userId = 1;
+  string assetId = 2;
+}
+
+message GetPermissionsReply {
+  repeated string permissions = 1;
+}
+
+// --- NEW: Grant role ---
+message GrantRoleRequest {
+  string grantedByUserId = 1;
+  string userId = 2;
+  string assetId = 3;
+  string roleId = 4;
+}
+
+message GrantRoleReply {
+  bool success = 1;
+  string message = 2;
+  repeated string updatedRoles = 3;
+}
+
+// --- NEW: Revoke role ---
+message RevokeRoleRequest {
+  string userId = 1;
+  string assetId = 2;
+  string roleId = 3;
+}
+
+message RevokeRoleReply {
+  bool success = 1;
+  string message = 2;
+  repeated string updatedRoles = 3;
 }

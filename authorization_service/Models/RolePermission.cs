@@ -6,7 +6,7 @@
         public int PermissionId { get; set; }
 
         // Navigation properties
-        public Role Role { get; set; } = default!;
-        public Permission Permission { get; set; } = default!;
+        public virtual Role Role { get; set; } = default!;
+        public virtual Permission Permission { get; set; } = default!;
     }
 }
