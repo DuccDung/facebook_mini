@@ -1,4 +1,5 @@
-﻿using authentication_service.Internal;
+﻿using authentication_service.Dtos;
+using authentication_service.Internal;
 using authentication_service.Models;
 using infrastructure.caching;
 using infrastructure.rabit_mq;
@@ -19,7 +20,7 @@ namespace authentication_service.Controllers
         private readonly ICacheService _cache;
         private readonly IRabitMqService _rabitMqService;
         private readonly IOptionsMonitor<TopologyOption> _topos;
-        public AuthController(IAuthentication authenticationService, AuthenticationContext context, ITokenService tokenService , ICacheService cache, IRabitMqService mq, IOptionsMonitor<TopologyOption> topos)
+        public AuthController(IAuthentication authenticationService, AuthenticationContext context, ITokenService tokenService, ICacheService cache, IRabitMqService mq, IOptionsMonitor<TopologyOption> topos)
         {
             _authenticationService = authenticationService;
             _context = context;
@@ -53,7 +54,7 @@ namespace authentication_service.Controllers
         public async Task<IActionResult> Refresh([FromBody] string refreshToken, CancellationToken ct)
         {
             var storedUserId = await _cache.GetAsync<int>($"refresh:{refreshToken}");
-            if (storedUserId == 0) 
+            if (storedUserId == 0)
             {
                 return Unauthorized(new { message = "Invalid refresh token" });
             }
@@ -68,7 +69,7 @@ namespace authentication_service.Controllers
 
         [HttpGet]
         [Route("/api/sign-in")]
-        public async Task<IActionResult> SignIn(string name , string email, string password)
+        public async Task<IActionResult> SignIn(string name, string email, string password)
         {
             var result = await _authenticationService.SignIn(name, email, password);
             if (!result.IsSussess || result.Data == null)
@@ -84,6 +85,62 @@ namespace authentication_service.Controllers
 
             await Task.CompletedTask;
             return Ok(new { Message = "Sign-in pendding confirm email !", name = name });
+        }
+        [HttpPost]
+        [Route("/api/sign-up")]
+        public async Task<IActionResult> SignUp([FromBody] RegisterRequest req)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            if (req.Email != req.EmailConfirmation)
+            {
+                return BadRequest(new { Message = "Email and Email Confirmation do not match." });
+            }
+            if (await _context.Accounts.AnyAsync(a => a.Email == req.Email))
+            {
+                return BadRequest(new { Message = "Email is already registered." });
+            }
+
+            var res = await _authenticationService.SignUp(req);
+            if (!res.IsSussess) return BadRequest(new { res.Message });
+            // pushlish -> setup profile
+            using var ch = _rabitMqService.CreateChannel();
+            var topo = _topos.Get("setup_profile");
+            var env = new Envelope {user_id = res.Data.AccountId, Req = req, At = DateTimeOffset.UtcNow };
+            var json = System.Text.Json.JsonSerializer.Serialize(new { env, at = DateTime.UtcNow });
+            _rabitMqService.Bind(ch, topo);
+            _rabitMqService.Publish(ch, topo, json);
+            // publish -> email_service
+            var topo_mail = _topos.Get("user-registered");
+            var json_mail = System.Text.Json.JsonSerializer.Serialize(new { res.Data.Email, at = DateTime.UtcNow });
+            _rabitMqService.Bind(ch, topo_mail);
+            _rabitMqService.Publish(ch, topo_mail, json_mail);
+
+            return Ok(new { Message = "Sign-up pendding confirm email !" });
+        }
+
+        [HttpGet]
+        [Route("/api/confirm-email")]
+        public async Task<IActionResult> ConfirmEmail(string email)
+        {
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
+            if (account == null)
+            {
+                return NotFound(new { Message = "Account not found." });
+            }
+            account.active = true;
+            _context.Accounts.Update(account);
+            await _context.SaveChangesAsync();
+            // publish -> email_service
+            using var ch = _rabitMqService.CreateChannel();
+            var topo_mail = _topos.Get("user-registered");
+            var json_mail = System.Text.Json.JsonSerializer.Serialize(new { email, at = DateTime.UtcNow });
+            _rabitMqService.Bind(ch, topo_mail);
+            _rabitMqService.Publish(ch, topo_mail, json_mail);
+
+            return Ok(new { Message = "Email confirmed successfully." });
         }
     }
 }

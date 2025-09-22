@@ -14,4 +14,5 @@ public partial class Account
     public string Email { get; set; } = null!;
 
     public string? PhotoUrl { get; set; }
+    public bool active { get; set; } = false;
 }

@@ -1,4 +1,5 @@
-﻿using authentication_service.Model.ModelBase;
+﻿using authentication_service.Dtos;
+using authentication_service.Model.ModelBase;
 using authentication_service.Models;
 
 namespace authentication_service.Internal
@@ -7,5 +8,6 @@ namespace authentication_service.Internal
     {
         Task<ResponseModel<Account>> Login(string acc_info, string password);
         Task<ResponseModel<Account>> SignIn(string name, string email, string password);
+        Task<ResponseModel<Account>> SignUp(RegisterRequest req);
     }
 }

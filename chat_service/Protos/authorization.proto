@@ -6,7 +6,7 @@ service AuthorizationGrpcService {
 }
 
 message RoleConversationRequest {
-  string userId = 1;
+int32 userId = 1;
   string assetId = 2;
 }
 

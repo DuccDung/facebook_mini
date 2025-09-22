@@ -81,6 +81,27 @@ builder.Services.Configure<TopologyOption>("resetpwd", o =>
     o.Dlx = "mail.dlx";
     o.Dlq = "mail.resetpwd.dlq";
 });
+
+builder.Services.Configure<TopologyOption>("setup_profile", o =>
+{
+    o.Exchange = "profile.exchange";
+    o.ExchangeType = RabbitMQ.Client.ExchangeType.Direct;
+    o.Queue = "profile.setup_profile.q";
+    o.RoutingKey = "profile.setup_profile";
+    o.Dlx = "profile.dlx";
+    o.Dlq = "profile.setup_profile.dlq";
+});
+//user-active-success
+builder.Services.Configure<TopologyOption>("user-active-success", o =>
+{
+    o.Exchange = "mail.exchange";
+    o.ExchangeType = RabbitMQ.Client.ExchangeType.Direct;
+    o.Queue = "mail.user-active-success.q";
+    o.RoutingKey = "mail.user-active-success";
+    o.Dlx = "user-active-success.dlx";
+    o.Dlq = "user-active-success.dlq";
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

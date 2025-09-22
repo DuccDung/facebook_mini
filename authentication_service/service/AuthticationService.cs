@@ -1,4 +1,5 @@
-﻿using authentication_service.Internal;
+﻿using authentication_service.Dtos;
+using authentication_service.Internal;
 using authentication_service.Model.ModelBase;
 using authentication_service.Models;
 using Microsoft.EntityFrameworkCore;
@@ -72,6 +73,33 @@ namespace authentication_service.service
                 IsSussess = true,
                 Message = "Account created successfully.",
                 Data = newAccount
+            };
+        }
+
+        public async Task<ResponseModel<Account>> SignUp(RegisterRequest req)
+        {
+            if (req == null)
+            {
+                return new ResponseModel<Account>
+                {
+                    IsSussess = false,
+                    Message = "Request cannot be null.",
+                    Data = null
+                };
+            }
+            var acc = new Account
+            {
+                AccountName = req.Firstname + " " + req.Lastname,
+                Email = req.Email,
+                Password = req.Password
+            };
+            await _context.Accounts.AddAsync(acc);
+            await _context.SaveChangesAsync();
+            return new ResponseModel<Account>
+            {
+                IsSussess = true,
+                Message = "Account registered successfully.",
+                Data = acc
             };
         }
     }

@@ -4,6 +4,8 @@ using infrastructure.rabit_mq;
 using RabbitMQ.Client;
 using Grpc.Core;
 using AuthorizationProto;
+using chat_service.Internal;
+using chat_service.service;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -51,6 +53,7 @@ builder.Services.Configure<TopologyOption>("chat_mqtt", o =>
 });
 
 builder.Services.AddHostedService<ChatConsumerService>();
+builder.Services.AddScoped<IAuthorization, Authorization>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

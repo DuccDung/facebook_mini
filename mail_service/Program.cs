@@ -40,6 +40,16 @@ builder.Services.Configure<TopologyOption>("mail_user_registered", o =>
     o.Prefetch = 16;
 });
 
+builder.Services.Configure<TopologyOption>("user-active-success", o =>
+{
+    o.Exchange = "mail.exchange";
+    o.ExchangeType = RabbitMQ.Client.ExchangeType.Direct;
+    o.Queue = "mail.user-active-success.q";
+    o.RoutingKey = "mail.user-active-success";
+    o.Dlx = "user-active-success.dlx";
+    o.Dlq = "user-active-success.dlq";
+});
+
 // Đăng ký BackgroundService consumer
 builder.Services.AddSingleton<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<ITemplateRenderer, SimpleTemplateRenderer>();
