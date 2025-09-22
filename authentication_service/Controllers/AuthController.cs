@@ -108,13 +108,13 @@ namespace authentication_service.Controllers
             // pushlish -> setup profile
             using var ch = _rabitMqService.CreateChannel();
             var topo = _topos.Get("setup_profile");
-            var env = new Envelope {user_id = res.Data.AccountId, Req = req, At = DateTimeOffset.UtcNow };
+            var env = new Envelope { user_id = res.Data.AccountId, Req = req, At = DateTimeOffset.UtcNow };
             var json = System.Text.Json.JsonSerializer.Serialize(new { env, at = DateTime.UtcNow });
             _rabitMqService.Bind(ch, topo);
             _rabitMqService.Publish(ch, topo, json);
             // publish -> email_service
             var topo_mail = _topos.Get("user-registered");
-            var json_mail = System.Text.Json.JsonSerializer.Serialize(new { res.Data.Email, at = DateTime.UtcNow });
+            var json_mail = System.Text.Json.JsonSerializer.Serialize(new {email = res.Data.Email, at = DateTime.UtcNow });
             _rabitMqService.Bind(ch, topo_mail);
             _rabitMqService.Publish(ch, topo_mail, json_mail);
 
@@ -133,14 +133,8 @@ namespace authentication_service.Controllers
             account.active = true;
             _context.Accounts.Update(account);
             await _context.SaveChangesAsync();
-            // publish -> email_service
-            using var ch = _rabitMqService.CreateChannel();
-            var topo_mail = _topos.Get("user-registered");
-            var json_mail = System.Text.Json.JsonSerializer.Serialize(new { email, at = DateTime.UtcNow });
-            _rabitMqService.Bind(ch, topo_mail);
-            _rabitMqService.Publish(ch, topo_mail, json_mail);
 
-            return Ok(new { Message = "Email confirmed successfully." });
+            return Redirect("http://127.0.0.1:8000/");
         }
     }
 }

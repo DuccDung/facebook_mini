@@ -132,6 +132,24 @@ services:
       - Redis__ServicePrefix=authz
     ports:
       - "5004:8083"
+  profile_service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0   
+    working_dir: /src/profile_service
+    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8084"
+    volumes:
+      - ./profile_service:/src/profile_service
+      - ./infrastructure:/src/infrastructure
+      - nuget_cache:/root/.nuget/packages
+      - ./dataprotection_keys:/keys
+    environment:
+      - ASPNETCORE_URLS=http://+:8084
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__SqlServer=Server=mssql,1433;Database=profile;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
+      - Redis__ConnectionString=redis:6379
+      - Redis__ServicePrefix=authz
+    ports:
+      - "5005:8084"
+
 volumes:
   redis_data:
   nuget_cache:

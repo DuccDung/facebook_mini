@@ -41,8 +41,9 @@ namespace profile_service.service
                         PropertyNameCaseInsensitive = true
                     };
 
-                    var env = JsonSerializer.Deserialize<Envelope>(json, opts)
-                              ?? throw new JsonException("Payload null");
+                    using var doc = JsonDocument.Parse(json);
+                    var envElem = doc.RootElement.GetProperty("env");
+                    var env = envElem.Deserialize<Envelope>(opts);
 
                     using var scope = _scopeFactory.CreateScope(); // <-- tạo scope cho mỗi message
                     var profileService = scope.ServiceProvider.GetRequiredService<IProfileService>();

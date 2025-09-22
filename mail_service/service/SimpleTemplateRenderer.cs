@@ -4,6 +4,11 @@ namespace mail_service.Internal;
 
 public class SimpleTemplateRenderer(IConfiguration config) : ITemplateRenderer
 {
+    public string RenderActiveSuccess(string displayName, string confirmUrl, DateTimeOffset expiresAt)
+    {
+        throw new NotImplementedException();
+    }
+
     public string RenderSignUpConfirm(string displayName, string confirmUrl, DateTimeOffset expiresAt)
     {
         var expireText = expiresAt.ToLocalTime().ToString("HH:mm, dd/MM/yyyy");
