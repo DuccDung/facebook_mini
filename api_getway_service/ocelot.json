@@ -1,0 +1,91 @@
+﻿{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/sign-up",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "authentication_service", // Sử dụng tên của container
+          "Port": 8080 // Cổng dịch vụ của authentication_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/sign-up",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/confirm-email",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "authentication_service", // Sử dụng tên của container
+          "Port": 8080 // Cổng dịch vụ của authentication_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/confirm-email",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/Customer/GetAllCustomers",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "profile_service", // Sử dụng tên của container
+          "Port": 8081 // Cổng dịch vụ của profile_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/customer/GetAllCustomers",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:5000" // Cổng của API Gateway trong Docker
+  }
+}
+
+
+
+
+//{
+//  "Routes": [
+//    // api still authen
+//    {
+//      "DownstreamPathTemplate": "/api/sign-up",
+//      "DownstreamScheme": "https",
+//      "DownstreamHostAndPorts": [
+//        {
+//          "Host": "localhost",
+//          "Port": 7202
+//        }
+//      ],
+//      "UpstreamPathTemplate": "/api/sign-up",
+//      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+//    },
+//    {
+//      "DownstreamPathTemplate": "/api/confirm-email",
+//      "DownstreamScheme": "https",
+//      "DownstreamHostAndPorts": [
+//        {
+//          "Host": "localhost",
+//          "Port": 7202
+//        }
+//      ],
+//      "UpstreamPathTemplate": "/api/confirm-email",
+//      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+//    },
+//    {
+//      "DownstreamPathTemplate": "/api/Customer/GetAllCustomers",
+//      "DownstreamScheme": "https",
+//      "DownstreamHostAndPorts": [
+//        {
+//          "Host": "localhost",
+//          "Port": 7202
+//        }
+//      ],
+//      "UpstreamPathTemplate": "/customer/GetAllCustomers",
+//      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+//    }
+//  ],
+//  "GlobalConfiguration": {
+//    "BaseUrl": "https://localhost:7087"
+//  }
+//}

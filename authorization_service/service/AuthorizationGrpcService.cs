@@ -35,50 +35,54 @@ namespace authorization_service.service
 			return true;
 		}
 
-		// RPC cũ
-		public override async Task<RoleConversationReply> IsRoleConversation(RoleConversationRequest request, ServerCallContext context)
-		{
-			try
-			{
-				if (!TryParseIds(request.UserId, request.AssetId, out var userId, out var assetId, out var parseErr))
-				{
-					return new RoleConversationReply
-					{
-						Success = false,
-						Message = parseErr,
-						Role = ""
-					};
-				}
+        // Fix the issue by ensuring the correct types are passed to the TryParseIds method.
+        // The error indicates that the method expects strings for the first two arguments, but integers are being passed.
+        // Update the code to pass the correct string properties from the request object.
 
-				var roles = await _authorizationService.GetUserRolesOnAssetAsync(userId, assetId, context.CancellationToken);
-				if (roles.Count == 0)
-				{
-					return new RoleConversationReply
-					{
-						Success = false,
-						Message = "User has no role on this asset",
-						Role = ""
-					};
-				}
+        public override async Task<RoleConversationReply> IsRoleConversation(RoleConversationRequest request, ServerCallContext context)
+        {
+            try
+            {
+                // Pass request.UserId and request.AssetId as strings to TryParseIds
+                if (!TryParseIds(request.UserId.ToString(), request.AssetId.ToString(), out var userId, out var assetId, out var parseErr))
+                {
+                    return new RoleConversationReply
+                    {
+                        Success = false,
+                        Message = parseErr,
+                        Role = ""
+                    };
+                }
 
-				return new RoleConversationReply
-				{
-					Success = true,
-					Message = "User has role(s)",
-					Role = string.Join(",", roles)
-				};
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "Error in IsRoleConversation");
-				return new RoleConversationReply
-				{
-					Success = false,
-					Message = "Internal server error",
-					Role = ""
-				};
-			}
-		}
+                var roles = await _authorizationService.GetUserRolesOnAssetAsync(userId, assetId, context.CancellationToken);
+                if (roles.Count == 0)
+                {
+                    return new RoleConversationReply
+                    {
+                        Success = false,
+                        Message = "User has no role on this asset",
+                        Role = ""
+                    };
+                }
+
+                return new RoleConversationReply
+                {
+                    Success = true,
+                    Message = "User has role(s)",
+                    Role = string.Join(",", roles)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in IsRoleConversation");
+                return new RoleConversationReply
+                {
+                    Success = false,
+                    Message = "Internal server error",
+                    Role = ""
+                };
+            }
+        }
 
 		// NEW: HasPermission
 		public override async Task<HasPermissionReply> HasPermission(HasPermissionRequest request, ServerCallContext context)

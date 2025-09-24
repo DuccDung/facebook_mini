@@ -1,0 +1,23 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "authentication_service\\authentication_service.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "profile_service\\profile_service.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "mail_service\\mail_service.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "api_getway_service\\api_getway_service.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

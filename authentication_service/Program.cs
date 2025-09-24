@@ -102,6 +102,19 @@ builder.Services.Configure<TopologyOption>("user-active-success", o =>
     o.Dlq = "user-active-success.dlq";
 });
 
+
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevFront", p => p
+        .WithOrigins("http://api_getway_service:8085") // Chỉ định nguồn cụ thể
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+       // .AllowCredentials() // Bật AllowCredentials nếu cần gửi cookies/token
+    );
+});
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -110,7 +123,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseCors("DevFront");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

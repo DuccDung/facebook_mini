@@ -42,7 +42,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    command: >
+    command: 
       bash -lc "
       rabbitmq-plugins enable --offline rabbitmq_mqtt rabbitmq_web_mqtt &&
       rabbitmq-server
@@ -125,11 +125,11 @@ services:
       - nuget_cache:/root/.nuget/packages
       - ./dataprotection_keys:/keys
     environment:
-      - ASPNETCORE_URLS=http://+:8081
+      - ASPNETCORE_URLS=http://+:8083
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=chat_service;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
-      - Redis__ServicePrefix=authz
+      - Redis__ServicePrefix=chat
     ports:
       - "5004:8083"
   profile_service:
@@ -144,12 +144,30 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8084
       - ASPNETCORE_ENVIRONMENT=Development
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_PORT=5672
+
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=profile;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
-      - Redis__ServicePrefix=authz
+      - Redis__ServicePrefix=profile
     ports:
       - "5005:8084"
-
+  api_getway_service:
+   image: mcr.microsoft.com/dotnet/sdk:8.0  
+   working_dir: /src/api_getway_service
+   command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8085"
+   volumes:
+        - ./api_getway_service:/src/api_getway_service
+        - ./infrastructure:/src/infrastructure
+        - nuget_cache:/root/.nuget/packages
+        - ./dataprotection_keys:/keys
+   environment:
+      - DOWNSTREAM_HOST=authentication_service  # Tên container của dịch vụ
+      - DOWNSTREAM_PORT=8080                    # Cổng của dịch vụ trong Docker
+   ports:
+      - "5000:8085"     
 volumes:
   redis_data:
   nuget_cache:
