@@ -1,6 +1,18 @@
 ﻿{
   "Routes": [
     {
+      "DownstreamPathTemplate": "/api/sign-in",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "authentication_service", // Sử dụng tên của container
+          "Port": 8080 // Cổng dịch vụ của authentication_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/sign-in",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    {
       "DownstreamPathTemplate": "/api/sign-up",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

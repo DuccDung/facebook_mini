@@ -30,11 +30,11 @@ namespace authentication_service.Controllers
             _rabitMqService = mq;
             _topos = topos;
         }
-        [HttpGet]
-        [Route("/api/login")]
-        public async Task<IActionResult> Login(string acc_info, string password)
+        [HttpPost]
+        [Route("/api/sign-in")]
+        public async Task<IActionResult> Login(LoginData login_Data)
         {
-            var result = await _authenticationService.Login(acc_info, password);
+            var result = await _authenticationService.Login(login_Data.acc_info, login_Data.password);
             if (!result.IsSussess || result.Data == null)
             {
                 return Unauthorized(new { result.Message });
@@ -68,25 +68,25 @@ namespace authentication_service.Controllers
             return Ok(tokens);
         }
 
-        [HttpGet]
-        [Route("/api/sign-in")]
-        public async Task<IActionResult> SignIn(string name, string email, string password)
-        {
-            var result = await _authenticationService.SignIn(name, email, password);
-            if (!result.IsSussess || result.Data == null)
-            {
-                return BadRequest(new { result.Message });
-            }
-            // publish -> email_service
-            using var ch = _rabitMqService.CreateChannel();
-            var topo = _topos.Get("user-registered");
-            var json = System.Text.Json.JsonSerializer.Serialize(new { email, at = DateTime.UtcNow });
-            _rabitMqService.Bind(ch, topo);
-            _rabitMqService.Publish(ch, topo, json);
+        //[HttpGet]
+        //[Route("/api/sign-in")]
+        //public async Task<IActionResult> SignIn(string name, string email, string password)
+        //{
+        //    var result = await _authenticationService.SignIn(name, email, password);
+        //    if (!result.IsSussess || result.Data == null)
+        //    {
+        //        return BadRequest(new { result.Message });
+        //    }
+        //    // publish -> email_service
+        //    using var ch = _rabitMqService.CreateChannel();
+        //    var topo = _topos.Get("user-registered");
+        //    var json = System.Text.Json.JsonSerializer.Serialize(new { email, at = DateTime.UtcNow });
+        //    _rabitMqService.Bind(ch, topo);
+        //    _rabitMqService.Publish(ch, topo, json);
 
-            await Task.CompletedTask;
-            return Ok(new { Message = "Sign-in pendding confirm email !", name = name });
-        }
+        //    await Task.CompletedTask;
+        //    return Ok(new { Message = "Sign-in pendding confirm email !", name = name });
+        //}
         [HttpPost]
         [Route("/api/sign-up")]
         public async Task<IActionResult> SignUp([FromBody] RegisterRequest req)
