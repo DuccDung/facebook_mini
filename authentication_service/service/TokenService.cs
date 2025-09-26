@@ -63,5 +63,42 @@ namespace authentication_service.service
                 Expiration = expires
             };
         }
+
+        public async Task<TokenResponse> GenerateTokenTemporarily(int userId)
+        {
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat,
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                    ClaimValueTypes.Integer64)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_key));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var expires = DateTime.UtcNow.AddMinutes(1); // Access token sống 15 phút
+
+            var token = new JwtSecurityToken(
+                issuer: _issuer,
+                audience: null,
+                claims: claims,
+                expires: expires,
+                signingCredentials: creds
+            );
+
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+
+            // refresh token thường là 1 chuỗi random, sống lâu hơn (vd 7 ngày)
+            var refreshToken = await GenerateRefreshTokenAsync();
+
+            return new TokenResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                Expiration = expires
+            };
+        }
     }
 }

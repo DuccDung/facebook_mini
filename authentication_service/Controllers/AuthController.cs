@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 
 namespace authentication_service.Controllers
 {
@@ -105,6 +106,9 @@ namespace authentication_service.Controllers
 
             var res = await _authenticationService.SignUp(req);
             if (!res.IsSussess) return BadRequest(new { res.Message });
+            // init token temporarily
+            var tokens = await _tokenService.GenerateTokenTemporarily(res.Data.AccountId); // token die affter 1 minutes
+            await _cache.SetAsync(res.Data.Email, tokens.AccessToken, TimeSpan.FromHours(0.5)); // save token temporarily 30 minutes
             // pushlish -> setup profile
             using var ch = _rabitMqService.CreateChannel();
             var topo = _topos.Get("setup_profile");
@@ -114,11 +118,16 @@ namespace authentication_service.Controllers
             _rabitMqService.Publish(ch, topo, json);
             // publish -> email_service
             var topo_mail = _topos.Get("user-registered");
-            var json_mail = System.Text.Json.JsonSerializer.Serialize(new {email = res.Data.Email, at = DateTime.UtcNow });
+            var json_mail = System.Text.Json.JsonSerializer.Serialize(new { email = res.Data.Email, token = tokens.AccessToken, at = DateTime.UtcNow });
             _rabitMqService.Bind(ch, topo_mail);
             _rabitMqService.Publish(ch, topo_mail, json_mail);
 
-            return Ok(new { Message = "Sign-up pendding confirm email !" });
+            return Ok(new
+            {
+                userId = res.Data.AccountId,
+                token = tokens.AccessToken,
+                Message = "Sign-up pendding confirm email !"
+            });
         }
 
         [HttpGet]
@@ -135,6 +144,31 @@ namespace authentication_service.Controllers
             await _context.SaveChangesAsync();
 
             return Redirect("http://127.0.0.1:8000/");
+        }
+        [HttpGet]
+        [Route("/api/again-sent-email")]
+        public async Task<IActionResult> SendBack(int userId,string email, string token)
+        {
+            var isToken = await _cache.GetAsync<string>(email);
+            if (isToken == null || isToken != token)
+            {
+                return BadRequest("Token is invalid or expired, please sign-up again !");
+            }
+            // set cache token again
+            var token_new = await _tokenService.GenerateTokenTemporarily(userId); // token die affter 1 minutes
+            await _cache.SetAsync(email, token_new.AccessToken, TimeSpan.FromHours(0.5)); // save token temporarily 30 minutes
+            // publish -> email_service
+            var ch = _rabitMqService.CreateChannel();
+            var topo_mail = _topos.Get("user-registered");
+            var json_mail = System.Text.Json.JsonSerializer.Serialize(new { email = email, token = token_new.AccessToken ,at = DateTime.UtcNow });
+            _rabitMqService.Bind(ch, topo_mail);
+            _rabitMqService.Publish(ch, topo_mail, json_mail);
+
+            return Ok(new
+            {
+                token = token_new.AccessToken,
+                Message = "Sign-up pendding confirm email !"
+            });
         }
     }
 }
