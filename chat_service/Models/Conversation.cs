@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace chat_service.Models;
 
-public partial class Conversation
+public class Conversation
 {
     public Guid ConversationId { get; set; }
 

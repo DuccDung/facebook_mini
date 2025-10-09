@@ -4,6 +4,7 @@ using infrastructure.rabit_mq;
 using RabbitMQ.Client;
 using Grpc.Core;
 using AuthorizationProto;
+using MediaProto;
 using chat_service.Internal;
 using chat_service.service;
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +18,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddGrpcClient<AuthorizationGrpcService.AuthorizationGrpcServiceClient>(option => {
     option.Address = new Uri("https://localhost:7266");
 });
+
+builder.Services.AddGrpcClient<MediaGrpcService.MediaGrpcServiceClient>(option =>
+{
+    option.Address = new Uri("https://localhost:7121");
+});
+
 builder.Services.AddSqlServer<TextingServicesContext>(builder.Configuration.GetConnectionString("SqlServer"));
 var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
 var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
@@ -54,6 +61,7 @@ builder.Services.Configure<TopologyOption>("chat_mqtt", o =>
 
 builder.Services.AddHostedService<ChatConsumerService>();
 builder.Services.AddScoped<IAuthorization, Authorization>();
+builder.Services.AddScoped<IConversation, chat_service.service.Conversation>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

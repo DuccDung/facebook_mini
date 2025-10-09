@@ -46,10 +46,8 @@ public partial class TextingServicesContext : DbContext
 
         modelBuilder.Entity<ConversationMember>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("conversation_members");
-
+            entity.HasKey(e => e.ConversationMemberId).HasName("PK_conversation_members");
+            entity.ToTable("conversation_members");
             entity.Property(e => e.ConversationId).HasColumnName("conversation_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(sysdatetime())")

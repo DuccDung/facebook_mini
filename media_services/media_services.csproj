@@ -4,11 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>88fad777-8eba-4174-af12-93ab1c0d9b27</UserSecretsId>
+    <UserSecretsId>6c52bbc4-a801-4123-baa9-4546924cd530</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.7.8" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
     <PackageReference Include="Grpc.AspNetCore.Server" Version="2.71.0" />
     <PackageReference Include="Grpc.Tools" Version="2.72.0">
@@ -25,15 +26,13 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.9" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\infrastructure\infrastructure.csproj" />
+    <Protobuf Include="Protos\media.proto" GrpcServices="Server" />
   </ItemGroup>
-	<ItemGroup>
-		<Protobuf Include="Protos\authorization.proto" GrpcServices="Client" />
-		<Protobuf Include="Protos\media.proto" GrpcServices="Client" />
-	</ItemGroup>
+
 </Project>

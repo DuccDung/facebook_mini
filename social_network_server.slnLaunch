@@ -3,19 +3,11 @@
     "Name": "New Profile",
     "Projects": [
       {
-        "Path": "authentication_service\\authentication_service.csproj",
+        "Path": "chat_service\\chat_service.csproj",
         "Action": "Start"
       },
       {
-        "Path": "profile_service\\profile_service.csproj",
-        "Action": "Start"
-      },
-      {
-        "Path": "mail_service\\mail_service.csproj",
-        "Action": "Start"
-      },
-      {
-        "Path": "api_getway_service\\api_getway_service.csproj",
+        "Path": "media_services\\media_services.csproj",
         "Action": "Start"
       }
     ]

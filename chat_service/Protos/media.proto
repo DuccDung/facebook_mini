@@ -1,0 +1,26 @@
+﻿syntax = "proto3";
+option csharp_namespace = "MediaProto";
+
+import "google/protobuf/timestamp.proto";
+
+service MediaGrpcService {
+  rpc GetByAssetId (GetByAssetIdRequest) returns (GetByAssetIdReply);
+}
+
+message GetByAssetIdRequest {
+  string assetId = 1; // bạn gửi 1 asset_id
+}
+
+message MediaItem {
+  string mediaId = 1;
+  string assetId = 2;
+  string mediaUrl = 3;
+  string mediaType = 4;
+  google.protobuf.Timestamp createAt = 5;
+  uint64 size = 6;
+  string objectKey = 7;
+}
+
+message GetByAssetIdReply {
+  repeated MediaItem items = 1; // <- trả về list
+}

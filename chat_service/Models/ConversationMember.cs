@@ -5,6 +5,7 @@ namespace chat_service.Models;
 
 public partial class ConversationMember
 {
+    public Guid ConversationMemberId { get; set; }
     public Guid ConversationId { get; set; }
 
     public int UserId { get; set; }

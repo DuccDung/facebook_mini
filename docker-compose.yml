@@ -23,7 +23,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-
   rabbitmq:
     image: rabbitmq:3.13-management
     container_name: rabbitmq
@@ -154,6 +153,28 @@ services:
       - Redis__ServicePrefix=profile
     ports:
       - "5005:8084"
+  media_service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0   
+    working_dir: /src/media_services
+    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8084"
+    volumes:
+      - ./media_services:/src/media_services
+      - ./infrastructure:/src/infrastructure
+      - nuget_cache:/root/.nuget/packages
+      - ./dataprotection_keys:/keys
+    environment:
+      - ASPNETCORE_URLS=http://+:8084
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_PORT=5672
+
+      - ConnectionStrings__SqlServer=Server=mssql,1433;Database=Media;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
+      - Redis__ConnectionString=redis:6379
+      - Redis__ServicePrefix=media
+    ports:
+      - "5006:8086"
   api_getway_service:
    image: mcr.microsoft.com/dotnet/sdk:8.0  
    working_dir: /src/api_getway_service
