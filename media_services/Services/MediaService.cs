@@ -1,14 +1,15 @@
-﻿using System;
+﻿using media_services.Contracts;
+using media_services.Interface;      // <- IObjectStorage của bạn
+using media_services.Models;        // <- B2Options của bạn
+using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using media_services.Contracts;
-using media_services.Interface;      // <- IObjectStorage của bạn
-using media_services.Models;        // <- B2Options của bạn
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace media_services.Services
 {
@@ -17,7 +18,7 @@ namespace media_services.Services
         private readonly IObjectStorage _storage;
         private readonly B2Options _opt;
         private readonly MediaContext _context;
-        public MediaService(IObjectStorage storage, IOptions<B2Options> opt , MediaContext context)
+        public MediaService(IObjectStorage storage, IOptions<B2Options> opt, MediaContext context)
         {
             _storage = storage;
             _opt = opt.Value;
@@ -93,10 +94,18 @@ namespace media_services.Services
                 throw new InvalidOperationException($"Content-Type not allowed: {ctType}");
         }
 
-        public async Task<List<Medium>> GetByAssetIdAsync(string asset_id, CancellationToken ct = default)
+        public async Task<List<Medium>> GetByAssetIdAsync(string asset_id)
         {
-            var res =await _context.Media.Where(x => x.AssetId == asset_id).ToListAsync();
-            return res;
+            try
+            {
+                var res = await _context.Media.Where(x => x.AssetId == asset_id).ToListAsync();
+                return res;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new List<Medium>();
+            }
         }
     }
 }

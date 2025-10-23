@@ -4,7 +4,7 @@ option csharp_namespace = "MediaProto";
 import "google/protobuf/timestamp.proto";
 
 service MediaGrpcService {
-  rpc GetByAssetId (GetByAssetIdRequest) returns (GetByAssetIdReply);
+  rpc GetByAssetIdGrpc(GetByAssetIdRequest) returns (GetByAssetIdReply);
 }
 
 message GetByAssetIdRequest {

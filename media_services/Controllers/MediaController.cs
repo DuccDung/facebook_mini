@@ -3,6 +3,7 @@ using media_services.Interface;
 using media_services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 namespace media_services.Controllers
 {
@@ -13,12 +14,34 @@ namespace media_services.Controllers
     {
         private readonly IMediaService _svc;
         private readonly MediaContext _context;
-        public MediaController(IMediaService svc, MediaContext context)
+        public MediaController(IMediaService svc , MediaContext context)
         {
             _svc = svc;
             _context = context;
         }
 
+        // test
+        //[HttpGet]
+        //public async Task<IActionResult> tesst()
+        //{
+        //    try
+        //    {
+        //        var test = await _context.Media.Where(x => x.AssetId== "xxx").ToListAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex);
+        //    }
+        //    var tesst = await _svc.GetByAssetIdAsync("xxx");
+        //    return Ok(tesst);
+        //}
+        [HttpGet]
+        [Route("get/by-asset")]
+        public async Task<IActionResult> GetByAssetId(string asset_id, CancellationToken ct)
+        {
+            var res = await _svc.GetByAssetIdAsync(asset_id);
+            return Ok(res);
+        }
         // --- Single file ---
         [HttpPost]
         [Consumes("multipart/form-data")]

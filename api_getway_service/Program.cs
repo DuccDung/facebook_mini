@@ -25,6 +25,7 @@ builder.Services.AddCors(options =>
         .AllowCredentials()  // chỉ bật nếu bạn cần gửi cookie/token theo dạng credentials: 'include'
     );
 });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

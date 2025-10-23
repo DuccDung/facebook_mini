@@ -54,10 +54,22 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "profile_service", // Sử dụng tên của container
-          "Port": 8081 // Cổng dịch vụ của profile_service trong Docker
+          "Port": 8084 // Cổng dịch vụ của profile_service trong Docker
         }
       ],
       "UpstreamPathTemplate": "/customer/GetAllCustomers",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    { // service chat getconversations
+      "DownstreamPathTemplate": "/api/Chat/GetConversation",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "chat_service", // Sử dụng tên của container
+          "Port": 8083 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Chat/GetConversation",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     }
   ],
@@ -107,9 +119,24 @@
 //      ],
 //      "UpstreamPathTemplate": "/customer/GetAllCustomers",
 //      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+//    },
+//    //https://localhost:7253/
+//    {
+//      "DownstreamPathTemplate": "/api/Chat/GetConversation",
+//      "DownstreamScheme": "https",
+//      "DownstreamHostAndPorts": [
+//        {
+//          "Host": "localhost",
+//          "Port": 7253
+//        }
+//      ],
+//      "UpstreamPathTemplate": "/api/Chat/GetConversation",
+//      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
 //    }
 //  ],
 //  "GlobalConfiguration": {
 //    "BaseUrl": "https://localhost:7087"
 //  }
 //}
+
+  //https://localhost:7087/

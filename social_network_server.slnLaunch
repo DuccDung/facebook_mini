@@ -9,6 +9,10 @@
       {
         "Path": "media_services\\media_services.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "api_getway_service\\api_getway_service.csproj",
+        "Action": "Start"
       }
     ]
   }

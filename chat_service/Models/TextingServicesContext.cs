@@ -46,7 +46,9 @@ public partial class TextingServicesContext : DbContext
 
         modelBuilder.Entity<ConversationMember>(entity =>
         {
-            entity.HasKey(e => e.ConversationMemberId).HasName("PK_conversation_members");
+            entity.Property(e => e.ConversationMemberId)
+                   .HasColumnName("conversation_members_id");  // Sử dụng tên cột đúng
+
             entity.ToTable("conversation_members");
             entity.Property(e => e.ConversationId).HasColumnName("conversation_id");
             entity.Property(e => e.CreatedAt)

@@ -46,13 +46,17 @@ public partial class MediaContext : DbContext
             entity.Property(e => e.MediaId)
                 .HasDefaultValueSql("(newsequentialid())")
                 .HasColumnName("media_id");
-            entity.Property(e => e.AssetId).HasColumnName("asset_id");
+            entity.Property(e => e.AssetId)
+                .HasMaxLength(200)
+                .HasColumnName("asset_id");
             entity.Property(e => e.CreateAt)
                 .HasPrecision(0)
                 .HasDefaultValueSql("(sysutcdatetime())")
                 .HasColumnName("create_at");
-            entity.Property(e => e.MediaType).HasColumnName("media_type");
-            entity.Property(e => e.Size).HasColumnName("size");
+            entity.Property(e => e.MediaType)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasColumnName("media_type");
             entity.Property(e => e.MediaUrl)
                 .HasMaxLength(2048)
                 .HasColumnName("media_url");
@@ -60,6 +64,7 @@ public partial class MediaContext : DbContext
                 .HasMaxLength(500)
                 .IsUnicode(false)
                 .HasColumnName("object_key");
+            entity.Property(e => e.Size).HasColumnName("size");
         });
 
         OnModelCreatingPartial(modelBuilder);
