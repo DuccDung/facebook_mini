@@ -1,9 +1,11 @@
-﻿using chat_service.Internal;
+﻿using Azure;
+using chat_service.Internal;
 using chat_service.Models;
 using chat_service.Models.ModelBase;
 using MediaProto;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+
 
 namespace chat_service.service
 {
@@ -72,62 +74,77 @@ namespace chat_service.service
 
         public async Task<ResponseModel<Conversation_Res>> GetConversation(int userId)
         {
-            var conversations = await _context.ConversationMembers.Include(x => x.Conversation).Where(x => x.UserId == userId).ToListAsync();
-            var list = new List<Conversation_Res>();
-            foreach (var conversation in conversations)
+            try
             {
-                var media = _mediaGrpc.GetByAssetIdGrpc(new GetByAssetIdRequest { AssetId = conversation.ConversationId.ToString() });
-                string json = JsonConvert.SerializeObject(media);
-                var response = JsonConvert.DeserializeObject<GrpcResponse>(json);
-                if (response.Items.Count > 0 && response.Items != null)
+                var conversations = await _context.ConversationMembers.Include(x => x.Conversation).Where(x => x.UserId == userId).ToListAsync();
+                var list = new List<Conversation_Res>();
+                foreach (var conversation in conversations)
                 {
-                    list.Add(new Conversation_Res
+                    var media = _mediaGrpc.GetByAssetIdGrpc(new GetByAssetIdRequest { AssetId = conversation.ConversationId.ToString() });
+                    var first = media.Items[0];
+                    var createdAt = first.CreateAt.ToDateTime(); // ✅ protobuf Timestamp → DateTime
+                    var photoUrl = first.MediaUrl;
+
+                    if (media.Items.Count > 0)
                     {
-                        ConversationId = conversation.ConversationId,
-                        ConversationName = conversation?.Title ?? "",
-                        PhotoUrl = response?.Items[0].MediaUrl ?? "",
-                    });
+                        list.Add(new Conversation_Res
+                        {
+                            ConversationId = conversation.ConversationId,
+                            ConversationName = conversation?.Conversation.Title ?? "",
+                            PhotoUrl = photoUrl ?? "",
+                        });
+                    }
+                    else
+                    {
+                        list.Add(new Conversation_Res
+                        {
+                            ConversationId = conversation.ConversationId,
+                            ConversationName = conversation?.Title ?? "",
+                        });
+                    }
                 }
-                else
+                var result = new ResponseModel<Conversation_Res>
                 {
-                    list.Add(new Conversation_Res
-                    {
-                        ConversationId = conversation.ConversationId,
-                        ConversationName = conversation?.Title ?? "",
-                    });
-                }
+                    IsSussess = true,
+                    StatusCode = 200,
+                    DataList = list
+                };
+                return result;
             }
-            var result = new ResponseModel<Conversation_Res>
+            catch (Exception ex)
             {
-                IsSussess = true,
-                StatusCode = 200,
-                DataList = list
-            };
-            return result;
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                return new ResponseModel<Conversation_Res>
+                {
+                    IsSussess = false,
+                    StatusCode = 500,
+                    Message = "Internal server error"
+                };
+            }
         }
 
-        public async Task<List<Message_Res>> GetMessageHistory(Guid conversationId, int userId)
+        public async Task<List<MessageModel>> GetMessageHistory(Guid conversationId, int userId)
         {
             var messages = await _context.Messages.Where(x => x.ConversationId == conversationId).OrderByDescending(m => m.CreatedAt).ToListAsync();
-            var list_data = new List<Message_Res>();
+            var list_data = new List<MessageModel>();
             foreach (var message in messages)
             {
                 if (message.SenderId == userId)
                 {
-                    list_data.Add(new Message_Res
+                    list_data.Add(new MessageModel
                     {
-                        message_id = message.MessageId,
-                        side = "right",
-                        text = message.Content ?? "",
+                        Id = message.MessageId,
+                        Side = MessageSide.right,
+                        Text = message.Content ?? "",
                     });
                 }
                 else
                 {
-                    list_data.Add(new Message_Res
+                    list_data.Add(new MessageModel
                     {
-                        message_id = message.MessageId,
-                        side = "left",
-                        text = message.Content ?? "",
+                        Id = message.MessageId,
+                        Side = MessageSide.left,
+                        Text = message.Content ?? "",
                     });
                 }
             }
@@ -139,5 +156,47 @@ namespace chat_service.service
         {
             throw new NotImplementedException();
         }
+        public async Task<string> FormatMessageTime(string utcIsoString)
+        {
+            if (string.IsNullOrEmpty(utcIsoString))
+                return "";
+
+            // Parse chuỗi ISO 8601 (dạng "2025-10-26T16:19:11.1709327Z")
+            if (!DateTime.TryParse(utcIsoString, null, System.Globalization.DateTimeStyles.RoundtripKind, out var utcTime))
+                return utcIsoString;
+
+            // Chuyển sang giờ địa phương (nếu bạn ở VN)
+            var localTime = utcTime.ToLocalTime();
+            var now = DateTime.Now;
+            var diff = now - localTime;
+
+            // --- Các trường hợp hiển thị ---
+            if (localTime.Date == now.Date)
+            {
+                // Cùng ngày → chỉ hiện giờ:phút
+                return localTime.ToString("HH:mm");
+            }
+            else if (diff.TotalDays < 2)
+            {
+                return "Hôm qua";
+            }
+            else if (diff.TotalDays < 7)
+            {
+                // Trong vòng 7 ngày
+                return $"{(int)diff.TotalDays} ngày trước";
+            }
+            else if (localTime.Year == now.Year)
+            {
+                // Cùng năm → chỉ hiển thị ngày-tháng
+                return localTime.ToString("dd/MM");
+            }
+            else
+            {
+                // Khác năm → ngày/tháng/năm
+                return localTime.ToString("dd/MM/yyyy");
+            }
+        }
+
+
     }
 }

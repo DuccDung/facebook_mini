@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon.S3;
+using Amazon.S3.Model;
 
 namespace media_services.Services
 {
@@ -18,11 +20,13 @@ namespace media_services.Services
         private readonly IObjectStorage _storage;
         private readonly B2Options _opt;
         private readonly MediaContext _context;
-        public MediaService(IObjectStorage storage, IOptions<B2Options> opt, MediaContext context)
+        private readonly IAmazonS3 _s3;
+        public MediaService(IObjectStorage storage, IOptions<B2Options> opt, MediaContext context, IAmazonS3 s3)
         {
             _storage = storage;
             _opt = opt.Value;
             _context = context;
+            _s3 = s3;
         }
 
         public async Task<UploadOutcome> UploadAsync(IFormFile file, string? folder, CancellationToken ct = default)
@@ -93,12 +97,28 @@ namespace media_services.Services
             if (!_opt.AllowedContentTypes.Any(p => ctType.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException($"Content-Type not allowed: {ctType}");
         }
+        public async Task<string> GetSignedUrlAsync(string objectKey)
+        {
+            var req = new GetPreSignedUrlRequest
+            {
+                BucketName = "socialnetworkfacebook",
+                Key = objectKey,
+                Expires = DateTime.UtcNow.AddMinutes(30),
+                Verb = HttpVerb.GET
+            };
+            return _s3.GetPreSignedURL(req);
+        }
+
 
         public async Task<List<Medium>> GetByAssetIdAsync(string asset_id)
         {
             try
             {
                 var res = await _context.Media.Where(x => x.AssetId == asset_id).ToListAsync();
+                foreach (var item in res)
+                {
+                    item.MediaUrl = await GetSignedUrlAsync(item.ObjectKey);
+                }
                 return res;
             }
             catch (Exception ex)

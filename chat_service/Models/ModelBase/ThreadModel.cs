@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 public class ThreadModel
 {
     [JsonPropertyName("id")]
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = default!;
@@ -28,6 +28,9 @@ public class ThreadModel
 
 public class MessageModel
 {
+    [JsonPropertyName("id")]
+    public Guid Id { get; set; }
+
     [JsonPropertyName("side")]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public MessageSide Side { get; set; }
@@ -39,6 +42,6 @@ public class MessageModel
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum MessageSide
 {
-    Left,
-    Right
+    left,
+    right
 }

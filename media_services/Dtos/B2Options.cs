@@ -2,6 +2,7 @@
 {
     public sealed class B2Options
     {
+        public string BucketName { get; set; } = string.Empty;
         public string Bucket { get; set; } = default!;
         public string ServiceURL { get; set; } = default!;
         public bool ForcePathStyle { get; set; } = true;

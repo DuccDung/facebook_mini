@@ -9,6 +9,7 @@ namespace chat_service.Internal
         Task<ResponseModel<Conversation_Res>> GetConversation(int userId);
         Task<ResponseModel<Conversation_Req>> PutConversation(Conversation conversation);
         Task<ResponseModel<Conversation_Req>> DeleteConversation(Guid conversationId);
-        Task<List<Message_Res>> GetMessageHistory(Guid conversationId , int userId);
+        Task<List<MessageModel>> GetMessageHistory(Guid conversationId , int userId);
+        Task<string> FormatMessageTime(string utcIsoString);
     }
 }

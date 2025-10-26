@@ -138,6 +138,7 @@ AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// docker dev system
 
 // gRPC tới các service nội bộ (HTTP, không TLS)
 builder.Services.AddGrpcClient<AuthorizationGrpcService.AuthorizationGrpcServiceClient>(o =>
@@ -149,6 +150,16 @@ builder.Services.AddGrpcClient<MediaGrpcService.MediaGrpcServiceClient>(o =>
     o.Address = new Uri("http://media_service:9086");
 });
 
+// gRPC host system
+//builder.Services.AddGrpcClient<AuthorizationGrpcService.AuthorizationGrpcServiceClient>(o =>
+//{
+//    o.Address = new Uri("http://authorization_service:8081");
+//});
+//builder.Services.AddGrpcClient<MediaGrpcService.MediaGrpcServiceClient>(o =>
+//{
+//    o.Address = new Uri("https://localhost:7121");
+//});
+
 // DB + Redis + RabbitMQ
 builder.Services.AddSqlServer<TextingServicesContext>(
     builder.Configuration.GetConnectionString("SqlServer"));
@@ -158,6 +169,8 @@ var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
 var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
 var rabbitPort = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var p) ? p : 5672;
 
+
+// host system 
 //var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
 //var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
 //var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";

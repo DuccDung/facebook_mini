@@ -66,8 +66,33 @@ namespace chat_service.Controllers
         public async Task<IActionResult> GetConversation(int userId)
         {
             var consersations = await _conversation.GetConversation(userId);
+            List<ThreadModel> threadModels = new List<ThreadModel>();
+            if (!consersations.IsSussess) return BadRequest();
+            foreach (var cv in consersations.DataList ?? new List<Conversation_Res>())
+            {
+                var messages =await _conversation.GetMessageHistory(cv.ConversationId, userId);
+                ThreadModel thread = new ThreadModel
+                {
+                    Id = cv.ConversationId,
+                    Name = cv.ConversationName,
+                    Avatar = cv.PhotoUrl ?? "https://example.com/default-avatar.png",
+                    Snippet = messages.FirstOrDefault()?.Text,
+                    Time = await _conversation.FormatMessageTime(DateTime.UtcNow.ToString("o")),
+                    Active = false,
+                    Messages = messages.Select(m => new MessageModel
+                    {
+                        Id = m.Id,
+                        Side = m.Side,
+                        Text = m.Text
+                    }).ToList()
+                };
+                threadModels.Add(thread);
+            }
             // fix tới đây
-            return Ok(consersations);
+            return Ok(threadModels);
+          //  return Ok(consersations);
         }
     }
+
+
 }
