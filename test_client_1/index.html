@@ -82,7 +82,7 @@
             const wsUrl = $('wsUrl').value.trim();
             const userId = $('userId').value.trim();
             const roomId = $('roomId').value.trim();
-            topic = `chat/room/${roomId}`;
+            topic = `chat/typing/${roomId}`;
             if (client?.connected) client.end();
 
             client = mqtt.connect(wsUrl, {
@@ -103,7 +103,7 @@
                 const msg = JSON.parse(buf.toString());
                 const mine = msg.senderId === userId;
                 const who = mine ? 'Me' : msg.senderId;
-                log(`<div class="${mine ? 'me' : 'other'}">[${who}] ${msg.text} <small>${new Date(msg.ts).toLocaleTimeString()}</small></div>`);
+                log(`<div class="${mine ? 'me' : 'other'}">[${who}] ${msg.Content} <small>${new Date(msg.ts).toLocaleTimeString()}</small></div>`);
             });
 
             $('btnSend').onclick = () => {

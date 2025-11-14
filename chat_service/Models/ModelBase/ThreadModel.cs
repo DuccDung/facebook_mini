@@ -22,6 +22,10 @@ public class ThreadModel
     [JsonPropertyName("active")]
     public bool? Active { get; set; }
 
+
+    [JsonPropertyName("is_group")]
+    public bool? IsGroup { get; set; }
+
     [JsonPropertyName("messages")]
     public List<MessageModel>? Messages { get; set; }
 }
@@ -37,6 +41,9 @@ public class MessageModel
 
     [JsonPropertyName("text")]
     public string Text { get; set; } = default!;
+    public DateTime Time { get; set; }
+    public string? Name { get; set; }
+    public string? Avatar { get; set; }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

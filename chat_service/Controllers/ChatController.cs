@@ -79,11 +79,14 @@ namespace chat_service.Controllers
                     Snippet = messages.FirstOrDefault()?.Text,
                     Time = await _conversation.FormatMessageTime(DateTime.UtcNow.ToString("o")),
                     Active = false,
+                    IsGroup = cv.IsGroup,
                     Messages = messages.Select(m => new MessageModel
                     {
                         Id = m.Id,
                         Side = m.Side,
-                        Text = m.Text
+                        Text = m.Text,
+                        Time = m.Time,
+                        Name = cv.ConversationName
                     }).ToList()
                 };
                 threadModels.Add(thread);

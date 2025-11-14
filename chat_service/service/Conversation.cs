@@ -84,7 +84,7 @@ namespace chat_service.service
                     var first = media.Items[0];
                     var createdAt = first.CreateAt.ToDateTime(); // ✅ protobuf Timestamp → DateTime
                     var photoUrl = first.MediaUrl;
-
+                    var isGroup = conversation.Conversation.IsGroup;
                     if (media.Items.Count > 0)
                     {
                         list.Add(new Conversation_Res
@@ -92,6 +92,7 @@ namespace chat_service.service
                             ConversationId = conversation.ConversationId,
                             ConversationName = conversation?.Conversation.Title ?? "",
                             PhotoUrl = photoUrl ?? "",
+                            IsGroup = isGroup,
                         });
                     }
                     else
@@ -100,6 +101,7 @@ namespace chat_service.service
                         {
                             ConversationId = conversation.ConversationId,
                             ConversationName = conversation?.Title ?? "",
+                            IsGroup = isGroup,
                         });
                     }
                 }
@@ -125,7 +127,7 @@ namespace chat_service.service
 
         public async Task<List<MessageModel>> GetMessageHistory(Guid conversationId, int userId)
         {
-            var messages = await _context.Messages.Where(x => x.ConversationId == conversationId).OrderByDescending(m => m.CreatedAt).ToListAsync();
+            var messages = await _context.Messages.Where(x => x.ConversationId == conversationId).OrderBy(m => m.CreatedAt).ToListAsync();
             var list_data = new List<MessageModel>();
             foreach (var message in messages)
             {
@@ -136,6 +138,7 @@ namespace chat_service.service
                         Id = message.MessageId,
                         Side = MessageSide.right,
                         Text = message.Content ?? "",
+                        Time = message.CreatedAt
                     });
                 }
                 else
@@ -145,6 +148,7 @@ namespace chat_service.service
                         Id = message.MessageId,
                         Side = MessageSide.left,
                         Text = message.Content ?? "",
+                        Time = message.CreatedAt
                     });
                 }
             }
