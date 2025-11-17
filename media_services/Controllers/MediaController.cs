@@ -42,6 +42,27 @@ namespace media_services.Controllers
             var res = await _svc.GetByAssetIdAsync(asset_id);
             return Ok(res);
         }
+        [HttpPost]
+        [Consumes("multipart/form-data")]
+        [Route("upload/img")]
+        public async Task<IActionResult> Upload(string asset_id, string asset_type ,[FromForm] MediaUploadForm form, CancellationToken ct)
+        {
+            if (form.File is null) return BadRequest("Missing file");
+            var r = await _svc.UploadAsync(form.File, form.Folder, ct);
+            if (r == null) return BadRequest(r);
+            var res = new Medium
+            {
+                AssetId = asset_id,
+                CreateAt = DateTime.Now,
+                MediaType = asset_type,
+                MediaUrl = r.SignedGetUrl,
+                ObjectKey = r.ObjectKey,
+                Size = r.Size,
+            };
+            await _context.Media.AddAsync(res);
+            await _context.SaveChangesAsync();
+            return Ok(r);
+        }
         // --- Single file ---
         [HttpPost]
         [Consumes("multipart/form-data")]

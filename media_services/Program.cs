@@ -45,7 +45,7 @@ builder.WebHost.ConfigureKestrel(o =>
     // Chỉ HTTP/2 (prior knowledge) để tránh cảnh báo “HTTP_1_1_REQUIRED”
     o.ListenAnyIP(9086, lo => lo.Protocols = HttpProtocols.Http2);
     // Nếu service này còn REST controller trên cổng khác, bạn có thể mở thêm một cổng Http1:
-    // o.ListenAnyIP(8086, lo => lo.Protocols = HttpProtocols.Http1);
+    o.ListenAnyIP(8086, lo => lo.Protocols = HttpProtocols.Http1);
 });
 builder.Services.AddGrpc();
 var app = builder.Build();

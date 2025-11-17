@@ -3,15 +3,11 @@
     "Name": "New Profile",
     "Projects": [
       {
-        "Path": "chat_service\\chat_service.csproj",
-        "Action": "Start"
-      },
-      {
         "Path": "media_services\\media_services.csproj",
         "Action": "Start"
       },
       {
-        "Path": "api_getway_service\\api_getway_service.csproj",
+        "Path": "profile_service\\profile_service.csproj",
         "Action": "Start"
       }
     ]

@@ -71,14 +71,54 @@
       ],
       "UpstreamPathTemplate": "/api/Chat/GetConversation",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+    // profile
+
+    { // service chat getconversations
+      "DownstreamPathTemplate": "/api/Profiles/get-profile",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "profile_service", // Sử dụng tên của container
+          "Port": 8084 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Profiles/get-profile",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
+    // media service
+    {
+      "DownstreamPathTemplate": "/api/Media/upload/file",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Media/upload/file",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    ///api/Media/upload/img
+    {
+      "DownstreamPathTemplate": "/api/Media/upload/img",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Media/upload/img",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     }
   ],
   "GlobalConfiguration": {
     "BaseUrl": "http://localhost:5000" // Cổng của API Gateway trong Docker
   }
 }
-
-
 
 
 //{
