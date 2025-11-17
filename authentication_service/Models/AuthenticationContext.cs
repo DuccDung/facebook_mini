@@ -16,6 +16,7 @@ public partial class AuthenticationContext : DbContext
     }
 
     public virtual DbSet<Account> Accounts { get; set; }
+    public virtual DbSet<Friendship> Friendships { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,6 +41,50 @@ public partial class AuthenticationContext : DbContext
             entity.Property(e => e.PhotoUrl)
                 .HasMaxLength(500)
                 .HasColumnName("photo_url");
+        });
+
+        modelBuilder.Entity<Friendship>(entity =>
+        {
+            entity.HasKey(e => e.FriendshipId).HasName("PK_friendships");
+
+            entity.ToTable("friendships");
+
+            entity.Property(e => e.FriendshipId)
+                .HasColumnName("friendship_id")
+                .HasDefaultValueSql("NEWSEQUENTIALID()");
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.FriendId).HasColumnName("friend_id");
+
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasColumnName("status");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("SYSDATETIME()");
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .HasDefaultValueSql("SYSDATETIME()");
+
+            // ====== RELATIONSHIPS ======
+            entity.HasOne(f => f.User)
+                .WithMany()
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_friend_user");
+
+            entity.HasOne(f => f.Friend)
+                .WithMany()
+                .HasForeignKey(f => f.FriendId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("fk_friend_friend");
+
+            // ====== UNIQUE (user_id, friend_id) ======
+            entity.HasIndex(e => new { e.UserId, e.FriendId })
+                  .IsUnique()
+                  .HasDatabaseName("uq_friendship");
         });
 
         OnModelCreatingPartial(modelBuilder);

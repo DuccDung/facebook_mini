@@ -127,5 +127,30 @@ namespace media_services.Services
                 return new List<Medium>();
             }
         }
+
+        public async Task<List<Medium>> GetImageDemoByAssetIdAsync(string asset_id)
+        {
+            try
+            {
+                var res = await _context.Media
+                    .Where(x => x.AssetId == asset_id)
+                    .OrderByDescending(x => x.CreateAt)
+                    .Take(10)
+                    .ToListAsync();
+
+                foreach (var item in res)
+                {
+                    item.MediaUrl = await GetSignedUrlAsync(item.ObjectKey);
+                }
+
+                return res;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new List<Medium>();
+            }
+        }
+
     }
 }

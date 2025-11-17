@@ -22,6 +22,7 @@ namespace media_services.Contracts
         Task<IReadOnlyList<UploadOutcome>> UploadManyAsync(IEnumerable<IFormFile> files, string? folder, CancellationToken ct = default);
         Task DeleteAsync(string objectKey, CancellationToken ct = default);
         Task<List<Medium>> GetByAssetIdAsync(string asset_id);
+        Task<List<Medium>> GetImageDemoByAssetIdAsync(string asset_id);
     }
 }
 

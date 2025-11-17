@@ -113,6 +113,32 @@
       ],
       "UpstreamPathTemplate": "/api/Media/upload/img",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    // img demo
+    {
+      "DownstreamPathTemplate": "/api/Media/get/images-demo",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Media/get/images-demo",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    ///api/Media/get/update-bacground-img
+    {
+      "DownstreamPathTemplate": "/api/Media/get/update-bacground-img",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Media/get/update-bacground-img",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     }
   ],
   "GlobalConfiguration": {

@@ -14,27 +14,12 @@ namespace media_services.Controllers
     {
         private readonly IMediaService _svc;
         private readonly MediaContext _context;
-        public MediaController(IMediaService svc , MediaContext context)
+        public MediaController(IMediaService svc, MediaContext context)
         {
             _svc = svc;
             _context = context;
         }
 
-        // test
-        //[HttpGet]
-        //public async Task<IActionResult> tesst()
-        //{
-        //    try
-        //    {
-        //        var test = await _context.Media.Where(x => x.AssetId== "xxx").ToListAsync();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex);
-        //    }
-        //    var tesst = await _svc.GetByAssetIdAsync("xxx");
-        //    return Ok(tesst);
-        //}
         [HttpGet]
         [Route("get/by-asset")]
         public async Task<IActionResult> GetByAssetId(string asset_id, CancellationToken ct)
@@ -42,14 +27,56 @@ namespace media_services.Controllers
             var res = await _svc.GetByAssetIdAsync(asset_id);
             return Ok(res);
         }
+        [HttpGet]
+        [Route("get/images-demo")]
+        public async Task<IActionResult> GetImgDemoByAssetId(string asset_id, CancellationToken ct)
+        {
+            var res = await _svc.GetImageDemoByAssetIdAsync(asset_id);
+            return Ok(res);
+        }
+        [HttpGet]
+        [Route("get/update-bacground-img")]
+        public async Task<IActionResult> UploadBacgroundImg(string mediaId, CancellationToken ct)
+        {
+            var bgImgOld = await _context.Media.Where(m => m.MediaType == "background_image").ToListAsync();
+            if(bgImgOld != null)
+            {
+                foreach (var bgImgOldItem in bgImgOld) bgImgOldItem.MediaType = "image/jpeg";
+                await _context.SaveChangesAsync();
+            }
+            var media = await _context.Media.FirstOrDefaultAsync(m => m.MediaId.ToString() == mediaId);
+            if (media == null) return BadRequest("media not found");
+            media.MediaType = "background_image";
+            _context.Media.Update(media);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
         [HttpPost]
         [Consumes("multipart/form-data")]
         [Route("upload/img")]
-        public async Task<IActionResult> Upload(string asset_id, string asset_type ,[FromForm] MediaUploadForm form, CancellationToken ct)
+        public async Task<IActionResult> Upload(string asset_id, string asset_type, [FromForm] MediaUploadForm form, CancellationToken ct)
         {
             if (form.File is null) return BadRequest("Missing file");
             var r = await _svc.UploadAsync(form.File, form.Folder, ct);
             if (r == null) return BadRequest(r);
+            if (asset_type == "cover_image")
+            {
+                var assets = await _context.Media.Where(m => m.AssetId == asset_id && m.MediaType == "cover_image").ToListAsync();
+                foreach (var item in assets)
+                {
+                    item.MediaType = "image/jpeg";
+                }
+                await _context.SaveChangesAsync();
+            }
+            else if (asset_type == "background_image")
+            {
+                var assets = await _context.Media.Where(m => m.AssetId == asset_id && m.MediaType == "background_image").ToListAsync();
+                foreach (var item in assets)
+                {
+                    item.MediaType = "image/jpeg";
+                }
+                await _context.SaveChangesAsync();
+            }
             var res = new Medium
             {
                 AssetId = asset_id,
@@ -61,7 +88,7 @@ namespace media_services.Controllers
             };
             await _context.Media.AddAsync(res);
             await _context.SaveChangesAsync();
-            return Ok(r);
+            return Ok(res);
         }
         // --- Single file ---
         [HttpPost]
@@ -83,7 +110,7 @@ namespace media_services.Controllers
             };
             await _context.Media.AddAsync(res);
             await _context.SaveChangesAsync();
-            return Ok(r);
+            return Ok(res);
         }
 
         // --- Multi files ---
