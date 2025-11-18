@@ -17,7 +17,7 @@ namespace profile_service.Controllers
             _context = context;
             _http = new HttpClient
             {
-               // BaseAddress = new Uri("https://localhost:7121/")
+                //BaseAddress = new Uri("https://localhost:7121/")
                 BaseAddress = new Uri("http://media_service:8086/")
             };
         }

@@ -47,6 +47,8 @@ Console.WriteLine(">>> SQL Connection String: " + builder.Configuration.GetConne
 // add scode generation service
 builder.Services.AddScoped<IAuthentication, AuthticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<FriendshipService>();
+
 // add rabbitmq service
 var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
 var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";

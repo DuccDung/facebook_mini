@@ -9,6 +9,10 @@
       {
         "Path": "profile_service\\profile_service.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "authentication_service\\authentication_service.csproj",
+        "Action": "Start"
       }
     ]
   }
