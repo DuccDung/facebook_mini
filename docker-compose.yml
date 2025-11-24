@@ -171,6 +171,7 @@ services:
       - RABBITMQ_PORT=5672
 
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=Media;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
+       - ConnectionStrings__MLSql=Data Source=SQL8020.site4now.net,1433;Initial Catalog=db_abf02f_social;User Id=db_abf02f_social_admin;Password=Dung@123;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
       - Redis__ServicePrefix=media
     ports:

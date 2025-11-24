@@ -167,6 +167,109 @@
       ],
       "UpstreamPathTemplate": "/api/Media/get/update-bacground-img",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    ///api/Posts/create
+    //    curl -X 'POST' \
+    //  'https://localhost:7121/api/Posts/create' \
+    //  -H 'accept: */*' \
+    //  -H 'Content-Type: application/json' \
+    //  -d '{
+    //  "userId": 2053,
+    //  "content": "Bầu trời hôm nay đẹp quá",
+    //  "postType": 0,
+    //  "tagFriendIds": [
+    //    0
+    //  ]
+    //}'
+    {
+      "DownstreamPathTemplate": "/api/Posts/create",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Posts/create",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    // /api/Media/upload/files
+    {
+      "DownstreamPathTemplate": "/api/Media/upload/files",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Media/upload/files",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    // /api/Posts/list
+    {
+      "DownstreamPathTemplate": "/api/Posts/list",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Posts/list",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    // /api/Posts/comment
+    {
+      "DownstreamPathTemplate": "/api/Posts/comment",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Posts/comment",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    // comment/reply
+    {
+      "DownstreamPathTemplate": "/api/Posts/comment/reply",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Posts/comment/reply",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    // /api/Posts/like
+    {
+      "DownstreamPathTemplate": "/api/Posts/like",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Posts/like",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+    // /api/Posts/unlike
+    {
+      "DownstreamPathTemplate": "/api/Posts/unlike",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "media_service", // Sử dụng tên của container
+          "Port": 8086 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Posts/unlike",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     }
   ],
   "GlobalConfiguration": {

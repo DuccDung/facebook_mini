@@ -1,6 +1,7 @@
 ﻿using Amazon.Runtime;
 using Amazon.S3;
 using media_services.Contracts;
+using media_services.Data.MLDb;
 using media_services.Interface;
 using media_services.Models;
 using media_services.Services;       // MediaService
@@ -10,6 +11,9 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<MediaContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")));
+builder.Services.AddDbContext<LogDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("MLSql")));
+// Data Source=SQL8020.site4now.net;Initial Catalog=db_abf02f_social;User Id=db_abf02f_social_admin;Password=Dung@123
 builder.Services.AddScoped<IMediaService, MediaService>();
 // Bind options
 builder.Services.Configure<B2Options>(builder.Configuration.GetSection("B2"));
@@ -28,6 +32,7 @@ builder.Services.AddSingleton<IAmazonS3>(_ =>
     ));
 
 builder.Services.AddScoped<IObjectStorage, B2S3Storage>();
+builder.Services.AddScoped<IPostService, PostService>();
 
 // Cho phép upload file lớn (tùy nhu cầu)
 builder.Services.Configure<FormOptions>(o =>

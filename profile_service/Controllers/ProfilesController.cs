@@ -17,7 +17,7 @@ namespace profile_service.Controllers
             _context = context;
             _http = new HttpClient
             {
-                //BaseAddress = new Uri("https://localhost:7121/")
+               // BaseAddress = new Uri("https://localhost:7121/")
                 BaseAddress = new Uri("http://media_service:8086/")
             };
         }
@@ -52,6 +52,63 @@ namespace profile_service.Controllers
             }
             return Ok(profile_res);
         }
+
+        [HttpPost("list")]
+        public async Task<IActionResult> GetProfilesByUserIds([FromBody] ProfileListRequest req)
+        {
+            if (req.UserIds == null || req.UserIds.Count == 0)
+                return BadRequest("userIds cannot be empty");
+
+            // 1. Lấy tất cả profile theo danh sách userId
+            var profiles = await _context.Profiles
+                .Where(p => req.UserIds.Contains(p.UserId))
+                .AsNoTracking()
+                .ToListAsync();
+
+            if (!profiles.Any())
+                return Ok(new List<UserProfileDto>());
+
+            // 2. CHUẨN BỊ MEDIA QUERY
+            var result = new List<UserProfileDto>();
+
+            foreach (var profile in profiles)
+            {
+                // Gọi media service để lấy avatar, cover...
+                string mediaApi = $"api/Media/get/by-asset?asset_id={profile.ProfileId}";
+                List<MediaItemDto>? mediaItems = null;
+
+                try
+                {
+                    mediaItems = await _http.GetFromJsonAsync<List<MediaItemDto>>(mediaApi);
+                }
+                catch
+                {
+                    mediaItems = new List<MediaItemDto>();
+                }
+
+                var dto = new UserProfileDto
+                {
+                    UserId = profile.UserId,
+                    ProfileId = profile.ProfileId,
+                    FullName = profile.FullName ?? "",
+                    Bio = profile.Bio,
+                    DateOfBirth = profile.DateOfBirth,
+
+                    // Avatar lưu trực tiếp ở profile DB
+                    AvatarUrl = profile.AvartaUrl,
+
+                    // Cover + background lấy từ Media service
+                    CoverImgUrl = mediaItems?.FirstOrDefault(m => m.MediaType == "cover_image")?.MediaUrl,
+                    BackgroundImgUrl = mediaItems?.FirstOrDefault(m => m.MediaType == "background_image")?.MediaUrl
+                };
+
+                result.Add(dto);
+            }
+
+            return Ok(result);
+        }
+
+
         [HttpPost]
         [Route("create-cover-image")]
         public async Task<IActionResult> CreateCoverImg(string url, string profile_id)

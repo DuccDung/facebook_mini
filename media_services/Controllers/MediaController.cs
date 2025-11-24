@@ -36,9 +36,9 @@ namespace media_services.Controllers
         }
         [HttpGet]
         [Route("get/update-bacground-img")]
-        public async Task<IActionResult> UploadBacgroundImg(string mediaId, CancellationToken ct)
+        public async Task<IActionResult> UploadBacgroundImg(string mediaId,string assetId, CancellationToken ct)
         {
-            var bgImgOld = await _context.Media.Where(m => m.MediaType == "background_image").ToListAsync();
+            var bgImgOld = await _context.Media.Where(m => m.MediaType == "background_image" && m.AssetId == assetId).ToListAsync();
             if(bgImgOld != null)
             {
                 foreach (var bgImgOldItem in bgImgOld) bgImgOldItem.MediaType = "image/jpeg";
