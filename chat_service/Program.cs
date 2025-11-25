@@ -203,7 +203,16 @@ builder.Services.Configure<TopologyOption>("chat_mqtt", o =>
     o.Prefetch = 10;
     o.QueueArgs = new Dictionary<string, object> { ["x-message-ttl"] = 600_000 };
 });
-
+// chat_notification
+builder.Services.Configure<TopologyOption>("chat_notification", o =>
+{
+    o.Exchange = "notification.exchange";
+    o.ExchangeType = RabbitMQ.Client.ExchangeType.Direct;
+    o.Queue = "notification.chat_message.q";
+    o.RoutingKey = "notification.chat_message";
+    o.Dlx = "notification.dlx";
+    o.Dlq = "notification.chat_message.dlq";
+});
 // DI app
 builder.Services.AddHostedService<ChatConsumerService>();
 builder.Services.AddScoped<IAuthorization, Authorization>();

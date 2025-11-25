@@ -171,11 +171,33 @@ services:
       - RABBITMQ_PORT=5672
 
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=Media;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
-       - ConnectionStrings__MLSql=Data Source=SQL8020.site4now.net,1433;Initial Catalog=db_abf02f_social;User Id=db_abf02f_social_admin;Password=Dung@123;TrustServerCertificate=True;
+      - ConnectionStrings__MLSql=Data Source=SQL8020.site4now.net,1433;Initial Catalog=db_abf02f_social;User Id=db_abf02f_social_admin;Password=Dung@123;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
       - Redis__ServicePrefix=media
     ports:
       - "5006:8086"
+  notification_service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0   
+    working_dir: /src/notification_service
+    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8087"
+    volumes:
+      - ./notification_service:/src/notification_service
+      - ./infrastructure:/src/infrastructure
+      - nuget_cache:/root/.nuget/packages
+      - ./dataprotection_keys:/keys
+    environment:
+      - ASPNETCORE_URLS=http://+:8087
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_PORT=5672
+
+      - ConnectionStrings__SqlServer=Server=mssql,1433;Database=notification;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
+      - Redis__ConnectionString=redis:6379
+      - Redis__ServicePrefix=notification
+    ports:
+      - "5007:8087"
   api_getway_service:
    image: mcr.microsoft.com/dotnet/sdk:8.0  
    working_dir: /src/api_getway_service

@@ -82,7 +82,7 @@ namespace chat_service.service
                 {
                     var media = _mediaGrpc.GetByAssetIdGrpc(new GetByAssetIdRequest { AssetId = conversation.ConversationId.ToString() });
                     var first = media.Items[0];
-                    var createdAt = first.CreateAt.ToDateTime(); // ✅ protobuf Timestamp → DateTime
+                    var createdAt = first.CreateAt.ToDateTime(); 
                     var photoUrl = first.MediaUrl;
                     var isGroup = conversation.Conversation.IsGroup;
                     if (media.Items.Count > 0)

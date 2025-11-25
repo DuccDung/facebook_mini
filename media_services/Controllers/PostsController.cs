@@ -54,8 +54,16 @@ namespace media_services.Controllers
                 LikeType = like.LikeType.ToString(),
                 CreateAt = like.CreateAt
             });
-            await _mlcontext.SaveChangesAsync();
             _context.Likes.Add(like);
+            try
+            {
+                await _mlcontext.SaveChangesAsync();
+
+            }catch (Exception ex)
+            {
+                Console.WriteLine("Error saving to MLDb: " + ex.Message);
+                Console.WriteLine(ex.InnerException?.Message);
+            }
             await _context.SaveChangesAsync();
 
             var likeCount = await _context.Likes

@@ -2,6 +2,7 @@
 using RabbitMQ.Client;
 using infrastructure.rabit_mq;
 using infrastructure;
+using notification_service.service;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -23,16 +24,33 @@ builder.Services.AddRabbitCore(opt =>
     opt.Password = rabbitPass;
     opt.Port = rabbitPort;
 });
-// Đăng ký theo tên
-builder.Services.Configure<TopologyOption>("user-registered", o =>
+builder.Services.AddRabbitCore(opt =>
 {
-    o.Exchange = "mail.exchange";
-    o.ExchangeType = RabbitMQ.Client.ExchangeType.Direct;
-    o.Queue = "mail.user-registered.q";
-    o.RoutingKey = "mail.user-registered";
-    o.Dlx = "mail.dlx";
-    o.Dlq = "mail.user-registered.dlq";
+    opt.HostName = rabbitHost;
+    opt.UserName = rabbitUser;
+    opt.Password = rabbitPass;
+    opt.Port = rabbitPort;
 });
+builder.Services.AddInfrastructure(
+    builder.Configuration["Redis:ConnectionString"] ?? "",
+    builder.Configuration["Redis:ServicePrefix"] ?? ""
+);
+
+// Topology RabbitMQ (ví dụ)
+builder.Services.AddRabbitTopology();
+
+// Đăng ký theo tên
+builder.Services.Configure<TopologyOption>("chat_notification", o =>
+{
+    o.Exchange = "notification.exchange";
+    o.ExchangeType = RabbitMQ.Client.ExchangeType.Direct;
+    o.Queue = "notification.chat_message.q";
+    o.RoutingKey = "notification.chat_message";
+    o.Dlx = "notification.dlx";
+    o.Dlq = "notification.chat_message.dlq";
+});
+
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -42,9 +60,11 @@ builder.Services.AddCors(options =>
         .WithOrigins("http://api_getway_service:8085") // Chỉ định nguồn cụ thể
         .AllowAnyHeader()
         .AllowAnyMethod()
-    // .AllowCredentials() // Bật AllowCredentials nếu cần gửi cookies/token
+    // .AllowCredentials() 
     );
 });
+
+builder.Services.AddHostedService<NotificationConsummerService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -54,18 +74,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseCors("DevFront");
-app.Map("/ws" , async httpContext =>
+app.UseWebSockets();
+app.Map("/ws", async httpContext =>
 {
-    if (httpContext.WebSockets.IsWebSocketRequest) { 
-        httpContext.Response.StatusCode = 400;
-        return;
-    }
-
+    var userId = httpContext.Request.Query["userId"].ToString();
+    if (!httpContext.WebSockets.IsWebSocketRequest) { httpContext.Response.StatusCode = 400; return; }
     var webSocket = await httpContext.WebSockets.AcceptWebSocketAsync();
-    //await WebSocketHandler.HandleWebSocketAsync(webSocket);
+    await WebSocketHandler.HandleAsync(webSocket, userId);
 });
-app.UseHttpsRedirection();
-
+//app.UseHttpsRedirection();
+    
 app.UseAuthorization();
 
 app.MapControllers();
