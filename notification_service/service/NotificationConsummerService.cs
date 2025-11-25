@@ -1,5 +1,6 @@
 ﻿using infrastructure.rabit_mq;
 using Microsoft.Extensions.Options;
+using notification_service.Models;
 using notification_service.Models.Dtos;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -39,13 +40,28 @@ namespace notification_service.service
                 var json = Encoding.UTF8.GetString(body);
                 var msg = System.Text.Json.JsonSerializer.Deserialize<mes_notification>(json);
                 if (msg == null) return;
-                Console.WriteLine(">>> Notification: " + json);
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        Console.WriteLine(">>> Notification ws: " + json);
-                        await WebSocketHandler.SendToUsersAsync(msg);
+                        var db = _scopeFactory.CreateScope().ServiceProvider.GetRequiredService<NotificationDbContext>();
+                        // lưu vào db
+                        var notification = new Notification
+                        {
+                            ActorId = msg.sender.userId,
+                            content = msg.content,
+                            Type = msg.type,
+                            IsRead = false,
+                            AssetId = msg.asset_id,
+                            CreatedAt = msg.created_at,
+                        };
+                        foreach (var receiverId in msg.receiver_ids)
+                        {
+                            notification.ReceiverId = receiverId;
+                            db.Notifications.Add(notification);
+                            await db.SaveChangesAsync();
+                        }
+                        await WebSocketHandler.SendToUsersAsync(msg, notification.NotificationId.ToString());
                         _channel.BasicAck(ea.DeliveryTag, multiple: false);
                     }
                     catch (Exception ex)

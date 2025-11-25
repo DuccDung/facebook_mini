@@ -49,25 +49,23 @@ public class ChatConsumerService : BackgroundService
 
         consumer.Received += (s, ea) =>
         {
+            var body = ea.Body.ToArray();
+            var json = Encoding.UTF8.GetString(body);
+            var msg = System.Text.Json.JsonSerializer.Deserialize<ChatMessageDto>(json);
+            var message = new Message
+            {
+                MessageId = Guid.NewGuid(),
+                SenderId = int.Parse(msg.SenderId ?? ""),
+                ConversationId = msg.ThreadId,
+                Content = msg?.Text ?? "",
+                CreatedAt = DateTime.UtcNow
+            };
             _ = Task.Run(async () =>
             {
-                var body = ea.Body.ToArray();
-                var json = Encoding.UTF8.GetString(body);
-                var msg = System.Text.Json.JsonSerializer.Deserialize<ChatMessageDto>(json);
-
-                Console.WriteLine(">>> Message: " + json);
                 try
                 {
                     var db = _scopeFactory.CreateScope().ServiceProvider.GetRequiredService<TextingServicesContext>();
                     if (msg == null) throw new Exception("Message is null");
-                    var message = new Message
-                    {
-                        MessageId = Guid.NewGuid(),
-                        SenderId = int.Parse(msg.SenderId ?? ""),
-                        ConversationId = msg.ThreadId,
-                        Content = msg?.Text ?? "",
-                        CreatedAt = DateTime.UtcNow
-                    };
                     await db.Messages.AddAsync(message);
                     await db.SaveChangesAsync();
                 }
@@ -81,23 +79,14 @@ public class ChatConsumerService : BackgroundService
             });
             _ = Task.Run(async () =>
             {
-                var body = ea.Body.ToArray();
-                var json = Encoding.UTF8.GetString(body);
-                var msg = System.Text.Json.JsonSerializer.Deserialize<ChatMessageDto>(json);
+                //var body = ea.Body.ToArray();
+                //var json = Encoding.UTF8.GetString(body);
+                //var msg = System.Text.Json.JsonSerializer.Deserialize<ChatMessageDto>(json);
 
                 try
                 {
                     if (msg == null) throw new Exception("Message is null");
                     var db = _scopeFactory.CreateScope().ServiceProvider.GetRequiredService<TextingServicesContext>();
-                    var message = new Message // 2
-                    {
-                        MessageId = Guid.NewGuid(),
-                        SenderId = int.Parse(msg.SenderId ?? throw new Exception("SenderId is null")),
-                        ConversationId = msg.ThreadId,
-                        Content = msg.Text ?? throw new Exception("Text is null"),
-                        CreatedAt = DateTime.UtcNow
-                    };
-
                     var receiverId = await db.ConversationMembers
                         .Where(cm => cm.ConversationId == msg.ThreadId && cm.UserId != message.SenderId)
                         .Select(cm => cm.UserId)
@@ -119,6 +108,7 @@ public class ChatConsumerService : BackgroundService
                         avatar_url = media.Items[0].MediaUrl,
                         content = message.Content.Length > 50 ? message.Content.Substring(0, 50) + "..." : message.Content,
                         created_at = message.CreatedAt,
+                        asset_id = message.MessageId.ToString(),
                         type = "message",
                     };
                     using var ch_notification = _mq.CreateChannel();

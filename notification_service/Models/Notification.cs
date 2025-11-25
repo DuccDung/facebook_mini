@@ -16,6 +16,7 @@ public partial class Notification
     public string AssetId { get; set; } = null!;
 
     public bool IsRead { get; set; }
+    public string content { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
 }

@@ -31,11 +31,12 @@ namespace notification_service.service
                 await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed", CancellationToken.None);
             }
         }
-        public static async Task SendToUsersAsync(mes_notification notification)
+        public static async Task SendToUsersAsync(mes_notification notification , string notification_id)
         {
             var userIds = notification.receiver_ids;
             var message = new notification_ws
             {
+                notification_id = notification_id,
                 sender = notification.sender,
                 content = notification.content,
                 type = notification.type,
