@@ -129,6 +129,11 @@ services:
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=texting_services;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
       - Redis__ServicePrefix=chat
+      
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_PORT=5672
     ports:
       - "5004:8083"
   profile_service:

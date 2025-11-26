@@ -4,6 +4,7 @@ using chat_service.Models.ModelBase;
 using MediaProto;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 
 namespace chat_service.Controllers
 {
@@ -14,12 +15,23 @@ namespace chat_service.Controllers
         private readonly AuthorizationGrpcService.AuthorizationGrpcServiceClient _authzGrpc;
         private readonly MediaGrpcService.MediaGrpcServiceClient _mediaGrpc;
         private readonly IConversation _conversation;
-
+        private readonly HttpClient _media;
+        private readonly HttpClient _profile;
         public ChatController(AuthorizationGrpcService.AuthorizationGrpcServiceClient authzGrpc, MediaGrpcService.MediaGrpcServiceClient mediaGrpc, IConversation conversation)
         {
             _authzGrpc = authzGrpc;
             _mediaGrpc = mediaGrpc;
             _conversation = conversation;
+            _media = new HttpClient
+            {
+                // BaseAddress = new Uri("https://localhost:7121/")
+                BaseAddress = new Uri("http://media_service:8086/")
+            };
+            _profile = new HttpClient
+            {
+                //  BaseAddress = new Uri("https://localhost:7070/")
+                BaseAddress = new Uri("http://profile_service:8084/")
+            };
         }
 
         [HttpGet]

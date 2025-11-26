@@ -19,6 +19,7 @@ public class ChatConsumerService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly MediaGrpcService.MediaGrpcServiceClient _mediaGrpc;
     private readonly HttpClient _http;
+    private readonly HttpClient _media;
     public ChatConsumerService(
         IRabitMqService mq,
         IRabbitTopology topology,
@@ -35,6 +36,11 @@ public class ChatConsumerService : BackgroundService
         {
             //  BaseAddress = new Uri("https://localhost:7070/")
             BaseAddress = new Uri("http://profile_service:8084/")
+        };
+        _media = new HttpClient
+        {
+            // BaseAddress = new Uri("https://localhost:7121/")
+            BaseAddress = new Uri("http://media_service:8086/")
         };
     }
 
@@ -91,12 +97,20 @@ public class ChatConsumerService : BackgroundService
                         .Where(cm => cm.ConversationId == msg.ThreadId && cm.UserId != message.SenderId)
                         .Select(cm => cm.UserId)
                         .ToListAsync(); // 1
-
-                    var media = _mediaGrpc.GetByAssetIdGrpc(new GetByAssetIdRequest { AssetId = msg.ThreadId.ToString() });
-                    if (media == null || media.Items == null || media.Items.Count == 0) throw new Exception("Media response is null or empty");
                     var url = $"api/Profiles/get-profile?userId={message.SenderId}";
                     var profile = await _http.GetFromJsonAsync<ProfileRes>(url);
+                    //var media = _mediaGrpc.GetByAssetIdGrpc(new GetByAssetIdRequest { AssetId = profile.ProfileId.ToString() });
 
+                    var url_media = $"api/Media/get/by-asset?asset_id={profile?.ProfileId.ToString()}";
+                    var media = await _media.GetFromJsonAsync<List<MediaItemDto>>(url_media);
+
+                    var avatarUrl = "";
+                    foreach(var item in media ?? new List<MediaItemDto>())
+                    {
+                        if (item.MediaType != "background_image") continue;
+                        avatarUrl = item.MediaUrl;
+                        break;
+                    }
                     mes_notification notification = new mes_notification
                     {
                         receiver_ids = receiverId,
@@ -105,12 +119,13 @@ public class ChatConsumerService : BackgroundService
                             userId = message.SenderId,
                             username = profile != null ? profile.FullName : "Unknown",
                         },
-                        avatar_url = media.Items[0].MediaUrl,
+                        avatar_url = avatarUrl ?? "",
                         content = message.Content.Length > 50 ? message.Content.Substring(0, 50) + "..." : message.Content,
                         created_at = message.CreatedAt,
                         asset_id = message.MessageId.ToString(),
                         type = "message",
                     };
+
                     using var ch_notification = _mq.CreateChannel();
                     var topo_notification = _options.Get("chat_notification");
                     var json_notification = System.Text.Json.JsonSerializer.Serialize(notification);
@@ -119,12 +134,13 @@ public class ChatConsumerService : BackgroundService
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(">>> RabbitMQ Consumer Exception: " + ex.Message);
+                    Console.WriteLine(">>> RabbitMQ Consumer-notification Exception: " + ex.Message);
                     _channel.BasicNack(ea.DeliveryTag, multiple: false, requeue: true);
                     throw;
                 }
             });
         };
+
         _channel.BasicConsume(queue: opt.Queue, autoAck: false, consumer: consumer);
         return Task.CompletedTask;
     }

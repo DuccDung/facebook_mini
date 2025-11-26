@@ -169,8 +169,6 @@ var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
 var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
 var rabbitPort = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var p) ? p : 5672;
 
-
-// host system 
 //var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
 //var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
 //var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";

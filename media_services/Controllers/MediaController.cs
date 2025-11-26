@@ -19,7 +19,25 @@ namespace media_services.Controllers
             _svc = svc;
             _context = context;
         }
-
+        //[HttpGet]
+        //[Route("initialize-img-cv")] // https://localhost:7121/api/Media/initialize-img-cv?profileId=x&cv_id=x
+        //public async Task<IActionResult> InitializeImgCv(string profileId, string cv_id)
+        //{
+        //    var avatar = await _context.Media.Where(m => m.AssetId == profileId && m.MediaType == "background_image").FirstOrDefaultAsync();
+        //    if (avatar == null) return BadRequest("not found data media!");
+        //    var media = new Medium
+        //    {
+        //        AssetId = cv_id,
+        //        CreateAt = DateTime.Now,
+        //        MediaType = "conversation_image",
+        //        MediaUrl = avatar.MediaUrl,
+        //        ObjectKey = avatar.ObjectKey,
+        //        Size = avatar.Size,
+        //    };
+        //    await _context.Media.AddAsync(media);
+        //    await _context.SaveChangesAsync();
+        //    return Ok("initialize image success!");
+        //}
         [HttpGet]
         [Route("get/by-asset")]
         public async Task<IActionResult> GetByAssetId(string asset_id, CancellationToken ct)
@@ -36,10 +54,10 @@ namespace media_services.Controllers
         }
         [HttpGet]
         [Route("get/update-bacground-img")]
-        public async Task<IActionResult> UploadBacgroundImg(string mediaId,string assetId, CancellationToken ct)
+        public async Task<IActionResult> UploadBacgroundImg(string mediaId, string assetId, CancellationToken ct)
         {
             var bgImgOld = await _context.Media.Where(m => m.MediaType == "background_image" && m.AssetId == assetId).ToListAsync();
-            if(bgImgOld != null)
+            if (bgImgOld != null)
             {
                 foreach (var bgImgOldItem in bgImgOld) bgImgOldItem.MediaType = "image/jpeg";
                 await _context.SaveChangesAsync();

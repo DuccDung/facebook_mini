@@ -5,6 +5,7 @@ using chat_service.Models.ModelBase;
 using MediaProto;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using static System.Net.WebRequestMethods;
 
 
 namespace chat_service.service
@@ -13,10 +14,22 @@ namespace chat_service.service
     {
         private readonly TextingServicesContext _context;
         private readonly MediaGrpcService.MediaGrpcServiceClient _mediaGrpc;
+        private readonly HttpClient _media;
+        private readonly HttpClient _profile;
         public Conversation(TextingServicesContext context, MediaGrpcService.MediaGrpcServiceClient mediaGrpc)
         {
             _context = context;
             _mediaGrpc = mediaGrpc;
+            _media = new HttpClient
+            {
+                // BaseAddress = new Uri("https://localhost:7121/")
+                BaseAddress = new Uri("http://media_service:8086/")
+            };
+            _profile = new HttpClient
+            {
+                //  BaseAddress = new Uri("https://localhost:7070/")
+                BaseAddress = new Uri("http://profile_service:8084/")
+            };
         }
         public async Task<ResponseModel<cv_res>> CreateConversation1v1(Conversation_Req req)
         {
@@ -41,10 +54,9 @@ namespace chat_service.service
                     ConversationId = cv.ConversationId,
                 };
                 await _context.ConversationMembers.AddAsync(member_1);
-                ConversationMember member_2 = new ConversationMember() { UserId = req.FriendId, ConversationId = cv.ConversationId, };
+                ConversationMember member_2 = new ConversationMember() { UserId = req.FriendId, ConversationId = cv.ConversationId };
                 _context.ConversationMembers.Add(member_2);
                 await _context.SaveChangesAsync();
-
                 return new ResponseModel<cv_res>
                 {
                     IsSussess = true,
@@ -80,18 +92,47 @@ namespace chat_service.service
                 var list = new List<Conversation_Res>();
                 foreach (var conversation in conversations)
                 {
-                    var media = _mediaGrpc.GetByAssetIdGrpc(new GetByAssetIdRequest { AssetId = conversation.ConversationId.ToString() });
-                    var first = media.Items[0];
-                    var createdAt = first.CreateAt.ToDateTime(); 
-                    var photoUrl = first.MediaUrl;
+                    var friendId = await _context.ConversationMembers
+                        .Where(x => x.ConversationId == conversation.ConversationId && x.UserId != userId)
+                        .Select(x => x.UserId)
+                        .FirstOrDefaultAsync();
+                    var conversation_avatar = "";
+                    var conversation_name = "";
+                    try
+                    {
+                        var url = $"api/Profiles/get-profile?userId={friendId}";
+                        var profile = await _profile.GetFromJsonAsync<ProfileRes>(url);
+                        if (profile == null) throw new Exception("Profile not found");
+                        conversation_name = profile.FullName;
+                        var url_media = $"api/Media/get/by-asset?asset_id={profile.ProfileId.ToString()}";
+                        var media_friend = await _media.GetFromJsonAsync<List<MediaItemDto>>(url_media);
+
+                        foreach (var item in media_friend ?? new List<MediaItemDto>())
+                        {
+                            if (item.MediaType != "background_image") continue;
+                            conversation_avatar = item.MediaUrl;
+                            break;
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"An error occurred while fetching profile or media: {ex.Message}");
+                    }
+
+                    // ==============================================================================================================
+                    //var media = _mediaGrpc.GetByAssetIdGrpc(new GetByAssetIdRequest { AssetId = conversation.ConversationId.ToString() });
+                    //var first = media.Items[0];
+                    //var createdAt = first.CreateAt.ToDateTime();
+                    //var photoUrl = first.MediaUrl;
                     var isGroup = conversation.Conversation.IsGroup;
-                    if (media.Items.Count > 0)
+                    if (conversation_avatar != "")
                     {
                         list.Add(new Conversation_Res
                         {
                             ConversationId = conversation.ConversationId,
-                            ConversationName = conversation?.Conversation.Title ?? "",
-                            PhotoUrl = photoUrl ?? "",
+                            ConversationName = conversation_name ?? "",
+                            PhotoUrl = conversation_avatar ?? "",
                             IsGroup = isGroup,
                         });
                     }
@@ -100,7 +141,7 @@ namespace chat_service.service
                         list.Add(new Conversation_Res
                         {
                             ConversationId = conversation.ConversationId,
-                            ConversationName = conversation?.Title ?? "",
+                            ConversationName = conversation_name ?? "",
                             IsGroup = isGroup,
                         });
                     }
