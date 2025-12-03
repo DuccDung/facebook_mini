@@ -65,6 +65,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddHostedService<NotificationConsummerService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

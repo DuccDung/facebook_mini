@@ -71,7 +71,19 @@ namespace authentication_service.Controllers
 
             return Ok(new {count = data.Count() , info = res});
         }
-
+        [HttpGet("notification_friends/{userId}")]
+        public async Task<IActionResult> GetFriendsNotification(int userId)
+        {
+            try
+            {
+                var data = await _service.GetFriends(userId);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
         // ========== LẤY LỜI MỜI KẾT BẠN ==========
         [HttpGet("pending/{userId}")]
         public async Task<IActionResult> GetPendingRequests(int userId)

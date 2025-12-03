@@ -1,6 +1,7 @@
 ﻿using notification_service.Models.Dtos;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace notification_service.service
 {
@@ -13,7 +14,11 @@ namespace notification_service.service
             ConnectedUsers[userId] = socket;
 
             var buffer = new byte[4096];
-
+            _= Task.Run(async () =>
+            {
+                var statusService = new StatusOperationFriendService();
+                await statusService.ManageGroupStatus(int.Parse(userId));
+            });
             try
             {
                 while (socket.State == WebSocketState.Open)
@@ -48,7 +53,6 @@ namespace notification_service.service
             var buffer = new ArraySegment<byte>(data);
             foreach (var userId in userIds)
             {
-                Console.WriteLine(">>> Sending notification to userId: " + userId);
                 var tempId = userId.ToString();
                 if (!ConnectedUsers.TryGetValue(tempId, out var socket)) continue;
                 if (socket.State != WebSocketState.Open) { ConnectedUsers.Remove(tempId); continue; }
@@ -56,6 +60,8 @@ namespace notification_service.service
                 catch { ConnectedUsers.Remove(tempId); Console.WriteLine("lỗi gửi ws!"); }
             }
         }
+
+      
     }
 
 }
