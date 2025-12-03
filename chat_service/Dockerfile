@@ -1,30 +1,36 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
+﻿# ===== RUNTIME (base) =====
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8083
+EXPOSE 8083   
 
-
-# This stage is used to build the service project
+# ===== BUILD =====
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["chat_service/chat_service.csproj", "chat_service/"]
-RUN dotnet restore "./chat_service/chat_service.csproj"
-COPY . .
-WORKDIR "/src/chat_service"
-RUN dotnet build "./chat_service.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+# 1) Copy các file .csproj để cache restore
+COPY ["chat_service/chat_service.csproj", "chat_service/"]
+COPY ["infrastructure/infrastructure.csproj", "infrastructure/"]
+
+# 2) Restore nuget cho chat_service
+RUN dotnet restore "chat_service/chat_service.csproj"
+
+# 3) Copy toàn bộ source code
+COPY . .
+WORKDIR /src/chat_service
+
+# 4) Build (tuỳ chọn, chủ yếu để check compile)
+RUN dotnet build "chat_service.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# ===== PUBLISH =====
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./chat_service.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "chat_service.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+# ===== FINAL IMAGE =====
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Tên DLL phải đúng tên project (chat_service.dll)
 ENTRYPOINT ["dotnet", "chat_service.dll"]

@@ -49,7 +49,7 @@ namespace mail_service.service
                     if (msg != null) // send mail
                     {
                         // string url_confirm = "https://localhost:7202/api/confirm-email?email=" + Uri.EscapeDataString(msg.email) + "&token=null";
-                        string url_confirm = "http://localhost:5000/api/confirm-email?email=" + Uri.EscapeDataString(msg.email) + "&token=" + msg.token;
+                        string url_confirm = "http://13.112.144.107:5000/api/confirm-email?email=" + Uri.EscapeDataString(msg.email) + "&token=" + msg.token;
                         Console.WriteLine($"[Mail Service] URL confirm: {url_confirm}");
                         var html = _renderer.RenderSignUpConfirm(msg.email, url_confirm, msg.at);
                         await _sender.SendAsync(msg.email, "Xác nhận email đăng ký", html, stoppingToken);

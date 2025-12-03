@@ -1,30 +1,35 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
+﻿# ===== RUNTIME (base) =====
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 8085
 
-
-# This stage is used to build the service project
+# ===== BUILD =====
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["api_getway_service/api_getway_service.csproj", "api_getway_service/"]
-RUN dotnet restore "./api_getway_service/api_getway_service.csproj"
-COPY . .
-WORKDIR "/src/api_getway_service"
-RUN dotnet build "./api_getway_service.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+# 1) Copy các file .csproj để cache restore
+COPY ["api_getway_service/api_getway_service.csproj", "api_getway_service/"]
+COPY ["infrastructure/infrastructure.csproj", "infrastructure/"]
+
+# 2) Restore nuget cho api_getway_service
+RUN dotnet restore "api_getway_service/api_getway_service.csproj"
+
+# 3) Copy toàn bộ source code
+COPY . .
+WORKDIR /src/api_getway_service
+
+# 4) Build (optional)
+RUN dotnet build "api_getway_service.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# ===== PUBLISH =====
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./api_getway_service.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "api_getway_service.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+# ===== FINAL IMAGE =====
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
 ENTRYPOINT ["dotnet", "api_getway_service.dll"]

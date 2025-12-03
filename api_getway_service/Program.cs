@@ -16,14 +16,24 @@ builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange
 // Đăng ký Ocelot
 builder.Services.AddOcelot();
 // CORS
+// CORS
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("DevFront", p => p
+//        .WithOrigins("http://localhost:8000" , "http://127.0.0.1:8000") // Chỉ định nguồn cụ thể
+//        .AllowAnyHeader()
+//        .AllowAnyMethod()
+//    );
+//});
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("DevFront", p => p
-         .WithOrigins("http://127.0.0.1:8000")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()  // chỉ bật nếu bạn cần gửi cookie/token theo dạng credentials: 'include'
-    );
+    options.AddPolicy("DevFront", p =>
+    {
+        p.WithOrigins("http://localhost:8000", "http://127.0.0.1:8000")  // Chỉ định các origin cụ thể
+         .AllowAnyHeader()  // Cho phép bất kỳ header nào
+         .AllowAnyMethod()  // Cho phép bất kỳ phương thức HTTP nào
+         .AllowCredentials();  // Cho phép gửi thông tin xác thực như cookies, headers, token
+    });
 });
 
 var app = builder.Build();

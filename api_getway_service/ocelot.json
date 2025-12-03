@@ -272,8 +272,11 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     }
   ],
+  //"GlobalConfiguration": {
+  //  "BaseUrl": "http://localhost:5000" // Cổng của API Gateway trong Docker
+  //}
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5000" // Cổng của API Gateway trong Docker
+    "BaseUrl": "http://13.112.144.107:5000"
   }
 }
 

@@ -9,13 +9,13 @@ services:
       - "1444:1433"
     volumes:
       - social_network_server_mssql_data:/var/opt/mssql
-      
+
   redis:
     image: redis:7-alpine
     container_name: redis
-    command: ["redis-server", "--appendonly", "yes"] 
+    command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6379:6379"     
+      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -27,10 +27,10 @@ services:
     image: rabbitmq:3.13-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"     # AMQP
-      - "15672:15672"   # UI
-      - "1883:1883"     # MQTT (TCP)
-      - "15675:15675"   # MQTT over WebSocket
+      - "5672:5672" # AMQP
+      - "15672:15672" # UI
+      - "1883:1883" # MQTT (TCP)
+      - "15675:15675" # MQTT over WebSocket
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -41,37 +41,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    command: 
-      bash -lc "
-      rabbitmq-plugins enable --offline rabbitmq_mqtt rabbitmq_web_mqtt &&
-      rabbitmq-server
-      "
- 
+    command: bash -lc "rabbitmq-plugins enable --offline rabbitmq_mqtt rabbitmq_web_mqtt && rabbitmq-server"
+
   authentication_service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0   
-    working_dir: /src/authentication_service
-    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8080"
-    volumes:
-      - ./authentication_service:/src/authentication_service
-      - ./infrastructure:/src/infrastructure
-      - nuget_cache:/root/.nuget/packages
-      - ./dataprotection_keys:/keys
+    build:
+      context: . # root solution
+      dockerfile: authentication_service/Dockerfile
+    image: nguyenducdung/social-authentication-service:1.0.0
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=Authentication;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
       - Redis__ServicePrefix=auth
-
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_USER=guest
       - RABBITMQ_PASS=guest
       - RABBITMQ_PORT=5672
+    depends_on:
+      - mssql
+      - redis
+      - rabbitmq
     ports:
       - "5001:8080"
 
   authorization_service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0   
+    image: mcr.microsoft.com/dotnet/sdk:8.0
     working_dir: /src/authorization_service
     command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8081"
     volumes:
@@ -87,19 +82,15 @@ services:
       - Redis__ServicePrefix=authz
     ports:
       - "5002:8081"
-  
   mail_service:
-   image: mcr.microsoft.com/dotnet/sdk:8.0   
-   working_dir: /src/mail_service
-   command: bash -lc "rm -rf /src/mail_service/bin /src/mail_service/obj && dotnet restore /src/mail_service/mail_service.csproj && dotnet watch --project /src/mail_service/mail_service.csproj run --urls http://0.0.0.0:8082"
-   volumes:
-      - ./mail_service:/src/mail_service
-      - ./infrastructure:/src/infrastructure
-      - nuget_cache:/root/.nuget/packages
-      - ./dataprotection_keys:/keys
-   environment:
-      ASPNETCORE_URLS: "http://+:8082"              
+    build:
+      context: .
+      dockerfile: mail_service/Dockerfile
+    image: nguyenducdung/social-mail-service:1.0.0
+    environment:
+      ASPNETCORE_URLS: "http://+:8082"
       ASPNETCORE_ENVIRONMENT: "Development"
+
       RABBITMQ_HOST: "rabbitmq"
       RABBITMQ_USER: "guest"
       RABBITMQ_PASS: "guest"
@@ -112,39 +103,38 @@ services:
       Smtp__Pass: "epwzvvnaxqybdqlc"
       Email__FromName: "Social Network"
       Email__FromAddress: "duccdung999@gmail.com"
-   ports:
-    - "5003:8082"
+    depends_on:
+      - rabbitmq
+    ports:
+      - "5003:8082"
+
   chat_service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0   
-    working_dir: /src/chat_service
-    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8083"
-    volumes:
-      - ./chat_service:/src/chat_service
-      - ./infrastructure:/src/infrastructure
-      - nuget_cache:/root/.nuget/packages
-      - ./dataprotection_keys:/keys
+    build:
+      context: . # root solution
+      dockerfile: chat_service/Dockerfile
+    image: nguyenducdung/social-chat-service:1.0.0
     environment:
       - ASPNETCORE_URLS=http://+:8083
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=texting_services;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
       - Redis__ServicePrefix=chat
-      
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_USER=guest
       - RABBITMQ_PASS=guest
       - RABBITMQ_PORT=5672
+    depends_on:
+      - mssql
+      - redis
+      - rabbitmq
     ports:
       - "5004:8083"
+
   profile_service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0   
-    working_dir: /src/profile_service
-    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8084"
-    volumes:
-      - ./profile_service:/src/profile_service
-      - ./infrastructure:/src/infrastructure
-      - nuget_cache:/root/.nuget/packages
-      - ./dataprotection_keys:/keys
+    build:
+      context: .
+      dockerfile: profile_service/Dockerfile
+    image: nguyenducdung/social-profile-service:1.0.0
     environment:
       - ASPNETCORE_URLS=http://+:8084
       - ASPNETCORE_ENVIRONMENT=Development
@@ -152,21 +142,21 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASS=guest
       - RABBITMQ_PORT=5672
-
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=profile;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
       - Redis__ServicePrefix=profile
+    depends_on:
+      - mssql
+      - redis
+      - rabbitmq
     ports:
       - "5005:8084"
+
   media_service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0   
-    working_dir: /src/media_services
-    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8086"
-    volumes:
-      - ./media_services:/src/media_services
-      - ./infrastructure:/src/infrastructure
-      - nuget_cache:/root/.nuget/packages
-      - ./dataprotection_keys:/keys
+    build:
+      context: .
+      dockerfile: media_services/Dockerfile
+    image: nguyenducdung/social-media-service:1.0.0
     environment:
       - ASPNETCORE_URLS=http://+:8086
       - ASPNETCORE_ENVIRONMENT=Development
@@ -174,22 +164,22 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASS=guest
       - RABBITMQ_PORT=5672
-
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=Media;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
       - ConnectionStrings__MLSql=Data Source=SQL8020.site4now.net,1433;Initial Catalog=db_abf02f_social;User Id=db_abf02f_social_admin;Password=Dung@123;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
       - Redis__ServicePrefix=media
+    depends_on:
+      - mssql
+      - redis
+      - rabbitmq
     ports:
       - "5006:8086"
+
   notification_service:
-    image: mcr.microsoft.com/dotnet/sdk:8.0   
-    working_dir: /src/notification_service
-    command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8087"
-    volumes:
-      - ./notification_service:/src/notification_service
-      - ./infrastructure:/src/infrastructure
-      - nuget_cache:/root/.nuget/packages
-      - ./dataprotection_keys:/keys
+    build:
+      context: . # root solution
+      dockerfile: notification_service/Dockerfile
+    image: nguyenducdung/social-notification-service:1.0.0
     environment:
       - ASPNETCORE_URLS=http://+:8087
       - ASPNETCORE_ENVIRONMENT=Development
@@ -197,26 +187,34 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASS=guest
       - RABBITMQ_PORT=5672
-
       - ConnectionStrings__SqlServer=Server=mssql,1433;Database=notification;User Id=sa;Password=Dung@123;Encrypt=False;TrustServerCertificate=True;
       - Redis__ConnectionString=redis:6379
       - Redis__ServicePrefix=notification
+    depends_on:
+      - mssql
+      - redis
+      - rabbitmq
     ports:
       - "5007:8087"
+
   api_getway_service:
-   image: mcr.microsoft.com/dotnet/sdk:8.0  
-   working_dir: /src/api_getway_service
-   command: bash -lc "dotnet restore && dotnet watch run --urls http://0.0.0.0:8085"
-   volumes:
-        - ./api_getway_service:/src/api_getway_service
-        - ./infrastructure:/src/infrastructure
-        - nuget_cache:/root/.nuget/packages
-        - ./dataprotection_keys:/keys
-   environment:
+    build:
+      context: .
+      dockerfile: api_getway_service/Dockerfile
+    image: nguyenducdung/social-api-gateway:1.0.0
+    environment:
       - ASPNETCORE_URLS=http://+:8085
       - ASPNETCORE_ENVIRONMENT=Development
-   ports:
-      - "5000:8085"     
+    depends_on:
+      - authentication_service
+      - authorization_service
+      - profile_service
+      - media_service
+      - chat_service
+      - notification_service
+    ports:
+      - "5000:8085"
+
 volumes:
   redis_data:
   nuget_cache:

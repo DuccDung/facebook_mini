@@ -2,20 +2,13 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 8080
-# EXPOSE 8081  # chỉ mở nếu bạn chạy thêm HTTPS trong container
-# (khuyên dùng HTTP trong container, HTTPS ở reverse proxy/gateway)
 
 # ===== build =====
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# 1) COPY chỉ các .csproj trước (để cache layer restore)
-#    ĐƯỜNG DẪN bên trái là từ ROOT SOLUTION (build context = root)
-COPY ["authentication_service/authentication_service.csproj", "authentication_service/"]
-
-# Nếu project có tham chiếu đến shared/infrastructure, thêm dòng này:
-# (nếu không có ProjectReference đó thì bỏ dòng này đi)
+# 1) COPY các .csproj để cache restore
 COPY ["authentication_service/authentication_service.csproj", "authentication_service/"]
 COPY ["infrastructure/infrastructure.csproj", "infrastructure/"]
 

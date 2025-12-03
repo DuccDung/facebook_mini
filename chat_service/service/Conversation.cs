@@ -120,11 +120,6 @@ namespace chat_service.service
                         Console.WriteLine($"An error occurred while fetching profile or media: {ex.Message}");
                     }
 
-                    // ==============================================================================================================
-                    //var media = _mediaGrpc.GetByAssetIdGrpc(new GetByAssetIdRequest { AssetId = conversation.ConversationId.ToString() });
-                    //var first = media.Items[0];
-                    //var createdAt = first.CreateAt.ToDateTime();
-                    //var photoUrl = first.MediaUrl;
                     var isGroup = conversation.Conversation.IsGroup;
                     if (conversation_avatar != "")
                     {
@@ -165,7 +160,82 @@ namespace chat_service.service
                 };
             }
         }
+        //public async Task<ResponseModel<Conversation_Res>> GetConversation(int userId)
+        //{
+        //    try
+        //    {
+        //        var conversations = await _context.ConversationMembers.Include(x => x.Conversation).Where(x => x.UserId == userId).ToListAsync();
+        //        var list = new List<Conversation_Res>();
+        //        foreach (var conversation in conversations)
+        //        {
+        //            var friendId = await _context.ConversationMembers
+        //                .Where(x => x.ConversationId == conversation.ConversationId && x.UserId != userId)
+        //                .Select(x => x.UserId)
+        //                .FirstOrDefaultAsync();
+        //            var conversation_avatar = "";
+        //            var conversation_name = "";
+        //            try
+        //            {
+        //                var url = $"api/Profiles/get-profile?userId={friendId}";
+        //                var profile = await _profile.GetFromJsonAsync<ProfileRes>(url);
+        //                if (profile == null) throw new Exception("Profile not found");
+        //                conversation_name = profile.FullName;
+        //                var url_media = $"api/Media/get/by-asset?asset_id={profile.ProfileId.ToString()}";
+        //                var media_friend = await _media.GetFromJsonAsync<List<MediaItemDto>>(url_media);
 
+        //                foreach (var item in media_friend ?? new List<MediaItemDto>())
+        //                {
+        //                    if (item.MediaType != "background_image") continue;
+        //                    conversation_avatar = item.MediaUrl;
+        //                    break;
+        //                }
+
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                Console.WriteLine($"An error occurred while fetching profile or media: {ex.Message}");
+        //            }
+
+        //            var isGroup = conversation.Conversation.IsGroup;
+        //            if (conversation_avatar != "")
+        //            {
+        //                list.Add(new Conversation_Res
+        //                {
+        //                    ConversationId = conversation.ConversationId,
+        //                    ConversationName = conversation_name ?? "",
+        //                    PhotoUrl = conversation_avatar ?? "",
+        //                    IsGroup = isGroup,
+        //                });
+        //            }
+        //            else
+        //            {
+        //                list.Add(new Conversation_Res
+        //                {
+        //                    ConversationId = conversation.ConversationId,
+        //                    ConversationName = conversation_name ?? "",
+        //                    IsGroup = isGroup,
+        //                });
+        //            }
+        //        }
+        //        var result = new ResponseModel<Conversation_Res>
+        //        {
+        //            IsSussess = true,
+        //            StatusCode = 200,
+        //            DataList = list
+        //        };
+        //        return result;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"An error occurred: {ex.Message}");
+        //        return new ResponseModel<Conversation_Res>
+        //        {
+        //            IsSussess = false,
+        //            StatusCode = 500,
+        //            Message = "Internal server error"
+        //        };
+        //    }
+        //}
         public async Task<List<MessageModel>> GetMessageHistory(Guid conversationId, int userId)
         {
             var messages = await _context.Messages.Where(x => x.ConversationId == conversationId).OrderBy(m => m.CreatedAt).ToListAsync();
@@ -242,6 +312,36 @@ namespace chat_service.service
             }
         }
 
+        public async Task<ResponseModel<cv_res>> CreateConversationGroup(ConversationList_Req req)
+        {
+            if (req == null) return new ResponseModel<cv_res> { IsSussess = false, Message = "Request is null" };
+
+            if (req.FriendIds == null || req.FriendIds.Count == 0) return new ResponseModel<cv_res> { IsSussess = false, Message = "No friends to add to the group" };
+            var cv = new Models.Conversation()
+            {
+                CreatedAt = DateTime.UtcNow,
+                IsGroup = true,
+                Title = req.Title ?? "Unnamed Group",
+            };
+            await _context.Conversations.AddAsync(cv);
+
+            var members = new List<ConversationMember> { new ConversationMember() { UserId = req.UserId, ConversationId = cv.ConversationId } };
+
+            foreach (var member in req.FriendIds) { members.Add(new ConversationMember() { UserId = member, ConversationId = cv.ConversationId }); }
+
+            await _context.ConversationMembers.AddRangeAsync(members);
+            await _context.SaveChangesAsync();
+            return new ResponseModel<cv_res>
+            {
+                IsSussess = true,
+                StatusCode = 200,
+                Data = new cv_res
+                {
+                    cv_id = cv.ConversationId,
+                    cv_name = cv.Title
+                }
+            };
+        }
 
     }
 }
