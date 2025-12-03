@@ -3,6 +3,7 @@ using chat_service.Internal;
 using chat_service.Models.ModelBase;
 using MediaProto;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
@@ -83,11 +84,12 @@ namespace chat_service.Controllers
             foreach (var cv in consersations.DataList ?? new List<Conversation_Res>())
             {
                 var messages =await _conversation.GetMessageHistory(cv.ConversationId, userId);
+                //var json = JsonConvert.SerializeObject(cv.PhotoUrl);
                 ThreadModel thread = new ThreadModel
                 {
                     Id = cv.ConversationId,
                     Name = cv.ConversationName,
-                    Avatar = cv.PhotoUrl ?? "https://example.com/default-avatar.png",
+                    Avatar = JsonConvert.SerializeObject(cv.PhotoUrl).ToString() ?? "https://example.com/default-avatar.png",
                     Snippet = messages.FirstOrDefault()?.Text,
                     Time = await _conversation.FormatMessageTime(DateTime.UtcNow.ToString("o")),
                     Active = false,

@@ -90,57 +90,117 @@ namespace chat_service.service
             {
                 var conversations = await _context.ConversationMembers.Include(x => x.Conversation).Where(x => x.UserId == userId).ToListAsync();
                 var list = new List<Conversation_Res>();
+
                 foreach (var conversation in conversations)
                 {
-                    var friendId = await _context.ConversationMembers
-                        .Where(x => x.ConversationId == conversation.ConversationId && x.UserId != userId)
-                        .Select(x => x.UserId)
-                        .FirstOrDefaultAsync();
-                    var conversation_avatar = "";
-                    var conversation_name = "";
-                    try
+                    var isGroup = conversation.Conversation.IsGroup;
+                    if (isGroup)
                     {
-                        var url = $"api/Profiles/get-profile?userId={friendId}";
-                        var profile = await _profile.GetFromJsonAsync<ProfileRes>(url);
-                        if (profile == null) throw new Exception("Profile not found");
-                        conversation_name = profile.FullName;
-                        var url_media = $"api/Media/get/by-asset?asset_id={profile.ProfileId.ToString()}";
-                        var media_friend = await _media.GetFromJsonAsync<List<MediaItemDto>>(url_media);
-
-                        foreach (var item in media_friend ?? new List<MediaItemDto>())
+                        var friendIds = await _context.ConversationMembers
+                                                .Where(x => x.ConversationId == conversation.ConversationId && x.UserId != userId)
+                                                .Select(x => x.UserId).ToListAsync();
+                        List<string> conversation_avatar = new List<string>();
+                        var conversation_name = "";
+                        try
                         {
-                            if (item.MediaType != "background_image") continue;
-                            conversation_avatar = item.MediaUrl;
-                            break;
+                            var cnt = 0;
+                            foreach (var friendId in friendIds)
+                            {
+                                var url = $"api/Profiles/get-profile?userId={friendId}";
+                                var profile = await _profile.GetFromJsonAsync<ProfileRes>(url);
+                                if (profile == null) throw new Exception("Profile not found");
+                                conversation_name += cnt <= 3 ? profile.FullName + ", " : profile.FullName;
+
+                                var url_media = $"api/Media/get/by-asset?asset_id={profile.ProfileId.ToString()}";
+                                var media_friend = await _media.GetFromJsonAsync<List<MediaItemDto>>(url_media);
+
+                                foreach (var item in media_friend ?? new List<MediaItemDto>())
+                                {
+                                    if (item.MediaType != "background_image") continue;
+                                    conversation_avatar.Add(item.MediaUrl);
+                                    break;
+                                }
+                                cnt++; if (cnt > 3) break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred while fetching profile or media: {ex.Message}");
                         }
 
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"An error occurred while fetching profile or media: {ex.Message}");
-                    }
-
-                    var isGroup = conversation.Conversation.IsGroup;
-                    if (conversation_avatar != "")
-                    {
-                        list.Add(new Conversation_Res
+                        if (conversation_avatar != null && conversation_avatar.Count > 0)
                         {
-                            ConversationId = conversation.ConversationId,
-                            ConversationName = conversation_name ?? "",
-                            PhotoUrl = conversation_avatar ?? "",
-                            IsGroup = isGroup,
-                        });
+                            list.Add(new Conversation_Res
+                            {
+                                ConversationId = conversation.ConversationId,
+                                ConversationName = conversation_name ?? "",
+                                PhotoUrl = conversation_avatar,
+                                IsGroup = isGroup,
+                            });
+                        }
+                        else
+                        {
+                            list.Add(new Conversation_Res
+                            {
+                                ConversationId = conversation.ConversationId,
+                                ConversationName = conversation_name ?? "",
+                                IsGroup = isGroup,
+                            });
+                        }
                     }
                     else
                     {
-                        list.Add(new Conversation_Res
+                        var friendId = await _context.ConversationMembers
+                                                .Where(x => x.ConversationId == conversation.ConversationId && x.UserId != userId)
+                                                .Select(x => x.UserId)
+                                                .FirstOrDefaultAsync();
+                        List<string> conversation_avatar = new List<string>();
+                        var conversation_name = "";
+                        try
                         {
-                            ConversationId = conversation.ConversationId,
-                            ConversationName = conversation_name ?? "",
-                            IsGroup = isGroup,
-                        });
+                            var url = $"api/Profiles/get-profile?userId={friendId}";
+                            var profile = await _profile.GetFromJsonAsync<ProfileRes>(url);
+                            if (profile == null) throw new Exception("Profile not found");
+                            conversation_name = profile.FullName;
+                            var url_media = $"api/Media/get/by-asset?asset_id={profile.ProfileId.ToString()}";
+                            var media_friend = await _media.GetFromJsonAsync<List<MediaItemDto>>(url_media);
+
+                            foreach (var item in media_friend ?? new List<MediaItemDto>())
+                            {
+                                if (item.MediaType != "background_image") continue;
+                                conversation_avatar.Add(item.MediaUrl);
+                                break;
+                            }
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"An error occurred while fetching profile or media: {ex.Message}");
+                        }
+
+                        if (conversation_avatar != null && conversation_avatar.Count > 0)
+                        {
+                            list.Add(new Conversation_Res
+                            {
+                                ConversationId = conversation.ConversationId,
+                                ConversationName = conversation_name ?? "",
+                                PhotoUrl = conversation_avatar,
+                                IsGroup = isGroup,
+                            });
+                        }
+                        else
+                        {
+                            list.Add(new Conversation_Res
+                            {
+                                ConversationId = conversation.ConversationId,
+                                ConversationName = conversation_name ?? "",
+                                IsGroup = isGroup,
+                            });
+                        }
                     }
                 }
+
+
                 var result = new ResponseModel<Conversation_Res>
                 {
                     IsSussess = true,
