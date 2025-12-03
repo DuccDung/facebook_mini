@@ -74,6 +74,14 @@ namespace chat_service.Controllers
             if (!res.IsSussess) return BadRequest();
             return Ok(res);
         }
+        [HttpPost]
+        [Route("InitConversationGroup")]
+        public async Task<IActionResult> InitConversationGroup(ConversationList_Req req)
+        {
+            var res = await _conversation.CreateConversationGroup(req);
+            if (!res.IsSussess) return BadRequest();
+            return Ok(res);
+        }
         [HttpGet]
         [Route("GetConversation")]
         public async Task<IActionResult> GetConversation(int userId)

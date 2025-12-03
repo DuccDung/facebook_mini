@@ -97,31 +97,46 @@ namespace chat_service.service
                     if (isGroup)
                     {
                         var friendIds = await _context.ConversationMembers
-                                                .Where(x => x.ConversationId == conversation.ConversationId && x.UserId != userId)
+                                                .Where(x => x.ConversationId == conversation.ConversationId)
                                                 .Select(x => x.UserId).ToListAsync();
                         List<string> conversation_avatar = new List<string>();
                         var conversation_name = "";
                         try
                         {
-                            var cnt = 0;
+                            var cnt = 1;
                             foreach (var friendId in friendIds)
                             {
-                                var url = $"api/Profiles/get-profile?userId={friendId}";
-                                var profile = await _profile.GetFromJsonAsync<ProfileRes>(url);
-                                if (profile == null) throw new Exception("Profile not found");
-                                conversation_name += cnt <= 3 ? profile.FullName + ", " : profile.FullName;
-
-                                var url_media = $"api/Media/get/by-asset?asset_id={profile.ProfileId.ToString()}";
-                                var media_friend = await _media.GetFromJsonAsync<List<MediaItemDto>>(url_media);
-
-                                foreach (var item in media_friend ?? new List<MediaItemDto>())
+                                var url_profile = $"api/Profiles/get-profile?userId={friendId}";
+                                var res = await _profile.GetAsync(url_profile);
+                                if (!res.IsSuccessStatusCode)
                                 {
-                                    if (item.MediaType != "background_image") continue;
-                                    conversation_avatar.Add(item.MediaUrl);
-                                    break;
+                                    Console.WriteLine($"Failed to fetch profile for userId {friendId}: {res.StatusCode}");
+                                    continue;
+                                }
+
+                                var profile = await res.Content.ReadFromJsonAsync<ProfileRes>();
+                                if (profile == null) throw new Exception("Profile not found");
+                                conversation_name += cnt <= 2 ? profile.FullName + ", " : profile.FullName;
+                                var url_media = $"api/Media/get/by-asset?asset_id={profile.ProfileId.ToString()}";
+
+                                var response = await _media.GetAsync(url_media);
+                                var media_friend = new List<MediaItemDto>();
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    media_friend = await response.Content.ReadFromJsonAsync<List<MediaItemDto>>();
+                                    if (media_friend != null && media_friend.Count > 0)
+                                    {
+                                        foreach (var item in media_friend ?? new List<MediaItemDto>())
+                                        {
+                                            if (item.MediaType != "background_image") continue;
+                                            conversation_avatar.Add(item.MediaUrl);
+                                            break;
+                                        }
+                                    }
                                 }
                                 cnt++; if (cnt > 3) break;
                             }
+                            Console.WriteLine(conversation_avatar);
                         }
                         catch (Exception ex)
                         {
@@ -171,7 +186,6 @@ namespace chat_service.service
                                 conversation_avatar.Add(item.MediaUrl);
                                 break;
                             }
-
                         }
                         catch (Exception ex)
                         {
@@ -384,7 +398,7 @@ namespace chat_service.service
                 Title = req.Title ?? "Unnamed Group",
             };
             await _context.Conversations.AddAsync(cv);
-
+            await _context.SaveChangesAsync();
             var members = new List<ConversationMember> { new ConversationMember() { UserId = req.UserId, ConversationId = cv.ConversationId } };
 
             foreach (var member in req.FriendIds) { members.Add(new ConversationMember() { UserId = member, ConversationId = cv.ConversationId }); }

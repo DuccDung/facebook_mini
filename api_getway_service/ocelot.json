@@ -101,6 +101,19 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 
+    { // /api/Chat/InitConversationGroup
+      "DownstreamPathTemplate": "/api/Chat/InitConversationGroup",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "chat_service", // Sử dụng tên của container
+          "Port": 8083 // Cổng dịch vụ của chat_service trong Docker
+        }
+      ],
+      "UpstreamPathTemplate": "/api/Chat/GetConversation",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+    },
+
     // profile
 
     { // service chat getconversations
@@ -281,61 +294,5 @@
 }
 
 
-//{
-//  "Routes": [
-//    // api still authen
-//    {
-//      "DownstreamPathTemplate": "/api/sign-up",
-//      "DownstreamScheme": "https",
-//      "DownstreamHostAndPorts": [
-//        {
-//          "Host": "localhost",
-//          "Port": 7202
-//        }
-//      ],
-//      "UpstreamPathTemplate": "/api/sign-up",
-//      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-//    },
-//    {
-//      "DownstreamPathTemplate": "/api/confirm-email",
-//      "DownstreamScheme": "https",
-//      "DownstreamHostAndPorts": [
-//        {
-//          "Host": "localhost",
-//          "Port": 7202
-//        }
-//      ],
-//      "UpstreamPathTemplate": "/api/confirm-email",
-//      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-//    },
-//    {
-//      "DownstreamPathTemplate": "/api/Customer/GetAllCustomers",
-//      "DownstreamScheme": "https",
-//      "DownstreamHostAndPorts": [
-//        {
-//          "Host": "localhost",
-//          "Port": 7202
-//        }
-//      ],
-//      "UpstreamPathTemplate": "/customer/GetAllCustomers",
-//      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-//    },
-//    //https://localhost:7253/
-//    {
-//      "DownstreamPathTemplate": "/api/Chat/GetConversation",
-//      "DownstreamScheme": "https",
-//      "DownstreamHostAndPorts": [
-//        {
-//          "Host": "localhost",
-//          "Port": 7253
-//        }
-//      ],
-//      "UpstreamPathTemplate": "/api/Chat/GetConversation",
-//      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
-//    }
-//  ],
-//  "GlobalConfiguration": {
-//    "BaseUrl": "https://localhost:7087"
-//  }
-//}
+
 
