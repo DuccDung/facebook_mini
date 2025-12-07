@@ -3,6 +3,7 @@ using authentication_service.Models;
 using notification_service.Models;
 using notification_service.Models.Dtos;
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
@@ -10,15 +11,16 @@ using System.Text.RegularExpressions;
 
 namespace notification_service.service
 {
-    public class StatusOperationFriendService 
+    public class StatusOperationFriendService
     {
         private HttpClient auth;
-        public StatusOperationFriendService() {
-           auth = new HttpClient
-           {
-               //BaseAddress = new Uri("https://localhost:7070/")
-               BaseAddress = new Uri("http://authentication_service:8080/")
-           };
+        public StatusOperationFriendService()
+        {
+            auth = new HttpClient
+            {
+                //BaseAddress = new Uri("https://localhost:7070/")
+                BaseAddress = new Uri("http://authentication_service:8080/")
+            };
         }
         public async Task ManageGroupStatus(int userId)
         {
@@ -45,9 +47,14 @@ namespace notification_service.service
                     var data = Encoding.UTF8.GetBytes(json);
                     var buffer = new ArraySegment<byte>(data);
 
-                    if (socket.State != WebSocketState.Open) { WebSocketHandler.ConnectedUsers.Remove(tempId); continue; }
+                    // Fix for CS7036: Add an 'out' parameter to the Remove method call to match the required signature.
+                    if (socket.State != WebSocketState.Open)
+                    {
+                        WebSocketHandler.ConnectedUsers.Remove(tempId, out _);
+                        continue;
+                    }
                     try { await socket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None); }
-                    catch { WebSocketHandler.ConnectedUsers.Remove(tempId); Console.WriteLine("lỗi gửi ws!"); }
+                    catch { WebSocketHandler.ConnectedUsers.Remove(tempId, out _); Console.WriteLine("lỗi gửi ws!"); }
                 }
                 if (!WebSocketHandler.ConnectedUsers.TryGetValue(userId.ToString(), out var x)) return;
                 await Task.Delay(3000);

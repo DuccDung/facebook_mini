@@ -5,7 +5,7 @@ namespace media_services.Models.MLDb;
 
 public partial class PostMedium
 {
-    public int MediaId { get; set; }
+    public string MediaId { get; set; }
 
     public Guid PostId { get; set; }
 

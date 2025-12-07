@@ -42,7 +42,7 @@ builder.Services.AddGrpcClient<MediaGrpcService.MediaGrpcServiceClient>(o =>
 builder.Services.AddSqlServer<TextingServicesContext>(
     builder.Configuration.GetConnectionString("SqlServer"));
 
-var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "13.112.144.107";
 var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
 var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
 var rabbitPort = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var p) ? p : 5672;

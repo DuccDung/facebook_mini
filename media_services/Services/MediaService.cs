@@ -97,17 +97,17 @@ namespace media_services.Services
             if (!_opt.AllowedContentTypes.Any(p => ctType.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException($"Content-Type not allowed: {ctType}");
         }
-        public async Task<string> GetSignedUrlAsync(string objectKey)
-        {
-            var req = new GetPreSignedUrlRequest
-            {
-                BucketName = "socialnetworkfacebook",
-                Key = objectKey,
-                Expires = DateTime.UtcNow.AddMinutes(30),
-                Verb = HttpVerb.GET
-            };
-            return _s3.GetPreSignedURL(req);
-        }
+        //public async Task<string> GetSignedUrlAsync(string objectKey)
+        //{
+        //    var req = new GetPreSignedUrlRequest
+        //    {
+        //        BucketName = "socialnetworkfacebook",
+        //        Key = objectKey,
+        //        Expires = DateTime.UtcNow.AddMinutes(30),
+        //        Verb = HttpVerb.GET
+        //    };
+        //    return _s3.GetPreSignedURL(req);
+        //}
 
 
         public async Task<List<Medium>> GetByAssetIdAsync(string asset_id)
@@ -117,7 +117,7 @@ namespace media_services.Services
                 var res = await _context.Media.Where(x => x.AssetId == asset_id).ToListAsync();
                 foreach (var item in res)
                 {
-                    item.MediaUrl = await GetSignedUrlAsync(item.ObjectKey);
+                    item.MediaUrl = "http://13.112.144.107:5006"+ item.MediaUrl;
                 }
                 return res;
             }
@@ -140,7 +140,7 @@ namespace media_services.Services
 
                 foreach (var item in res)
                 {
-                    item.MediaUrl = await GetSignedUrlAsync(item.ObjectKey);
+                    item.MediaUrl = "http://13.112.144.107:5006"+ item.MediaUrl;
                 }
 
                 return res;

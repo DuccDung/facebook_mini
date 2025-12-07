@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
 namespace media_services.Controllers
 {
 
@@ -75,39 +77,42 @@ namespace media_services.Controllers
         public async Task<IActionResult> Upload(string asset_id, string asset_type, [FromForm] MediaUploadForm form, CancellationToken ct)
         {
             if (form.File is null) return BadRequest("Missing file");
-            var r = await _svc.UploadAsync(form.File, form.Folder, ct);
-            if (r == null) return BadRequest(r);
-            if (asset_type == "cover_image")
+
+            // Đường dẫn đến thư mục wwwroot
+            var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+
+            // Tạo thư mục con theo asset_id (nếu chưa tồn tại)
+            var assetFolder = Path.Combine(webRootPath, asset_id);
+            if (!Directory.Exists(assetFolder))
             {
-                var assets = await _context.Media.Where(m => m.AssetId == asset_id && m.MediaType == "cover_image").ToListAsync();
-                foreach (var item in assets)
-                {
-                    item.MediaType = "image/jpeg";
-                }
-                await _context.SaveChangesAsync();
+                Directory.CreateDirectory(assetFolder);
             }
-            else if (asset_type == "background_image")
+
+            // Lưu tệp vào thư mục wwwroot/[asset_id]/ 
+            var filePath = Path.Combine(assetFolder, form.File.FileName);
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
             {
-                var assets = await _context.Media.Where(m => m.AssetId == asset_id && m.MediaType == "background_image").ToListAsync();
-                foreach (var item in assets)
-                {
-                    item.MediaType = "image/jpeg";
-                }
-                await _context.SaveChangesAsync();
+                await form.File.CopyToAsync(fileStream);
             }
+
+            // Lưu thông tin về media vào cơ sở dữ liệu
             var res = new Medium
             {
                 AssetId = asset_id,
                 CreateAt = DateTime.Now,
                 MediaType = asset_type,
-                MediaUrl = r.SignedGetUrl,
-                ObjectKey = r.ObjectKey,
-                Size = r.Size,
+                MediaUrl = Path.Combine("/" + asset_id, form.File.FileName),  // Đường dẫn tương đối từ wwwroot
+                ObjectKey = form.File.FileName,  // Lưu tên file hoặc một khóa duy nhất khác tùy theo yêu cầu của bạn
+                Size = form.File.Length,
             };
+
+            // Lưu vào cơ sở dữ liệu
             await _context.Media.AddAsync(res);
             await _context.SaveChangesAsync();
+
             return Ok(res);
         }
+
         // --- Single file ---
         [HttpPost]
         [Consumes("multipart/form-data")]
@@ -115,21 +120,45 @@ namespace media_services.Controllers
         public async Task<IActionResult> Upload(string asset_id, [FromForm] MediaUploadForm form, CancellationToken ct)
         {
             if (form.File is null) return BadRequest("Missing file");
-            var r = await _svc.UploadAsync(form.File, form.Folder, ct);
-            if (r == null) return BadRequest(r);
+
+            // Lấy đường dẫn đến thư mục wwwroot trên server
+            var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+
+            // Tạo thư mục con theo asset_id nếu chưa có
+            var assetFolder = Path.Combine(webRootPath, asset_id);
+            if (!Directory.Exists(assetFolder))
+            {
+                Directory.CreateDirectory(assetFolder);
+            }
+
+            // Đặt tên file khi lưu trữ
+            var fileName = form.File.FileName;
+            var filePath = Path.Combine(assetFolder, fileName);
+
+            // Lưu file vào thư mục wwwroot/[asset_id]
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await form.File.CopyToAsync(fileStream, ct);
+            }
+
+            // Tạo đối tượng Media để lưu vào cơ sở dữ liệu
             var res = new Medium
             {
                 AssetId = asset_id,
                 CreateAt = DateTime.Now,
-                MediaType = r.ContentType,
-                MediaUrl = r.SignedGetUrl,
-                ObjectKey = r.ObjectKey,
-                Size = r.Size,
+                MediaType = form.File.ContentType,
+                MediaUrl = $"/{asset_id}/{fileName}",  // Đường dẫn tương đối từ thư mục wwwroot
+                ObjectKey = fileName,  // Lưu tên file hoặc một khóa duy nhất khác nếu cần
+                Size = form.File.Length,
             };
+
+            // Lưu vào cơ sở dữ liệu
             await _context.Media.AddAsync(res);
             await _context.SaveChangesAsync();
+
             return Ok(res);
         }
+
 
         // --- Multi files ---
         [HttpPost]
@@ -138,25 +167,47 @@ namespace media_services.Controllers
         public async Task<IActionResult> UploadMany(string asset_id, [FromForm] MediaUploadManyForm form, CancellationToken ct)
         {
             if (form.Files is null || form.Files.Count == 0) return BadRequest("No files");
-            var r = await _svc.UploadManyAsync(form.Files, form.Folder, ct);
-            if (r == null) return BadRequest();
-            var res = new List<Medium>();
-            foreach (var file in r)
+
+            // Lấy đường dẫn đến thư mục wwwroot trên server
+            var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+
+            // Tạo thư mục con theo asset_id nếu chưa có
+            var assetFolder = Path.Combine(webRootPath, asset_id);
+            if (!Directory.Exists(assetFolder))
             {
+                Directory.CreateDirectory(assetFolder);
+            }
+
+            var res = new List<Medium>();
+            foreach (var file in form.Files)
+            {
+                // Đặt tên file khi lưu trữ
+                var fileName = file.FileName;
+                var filePath = Path.Combine(assetFolder, fileName);
+
+                // Lưu file vào thư mục wwwroot/[asset_id]
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(fileStream, ct);
+                }
+
+                // Tạo đối tượng Media để lưu vào cơ sở dữ liệu
                 res.Add(new Medium
                 {
                     AssetId = asset_id,
                     CreateAt = DateTime.Now,
                     MediaType = file.ContentType,
-                    MediaUrl = file.SignedGetUrl,
-                    ObjectKey = file.ObjectKey,
-                    Size = file.Size,
+                    MediaUrl = $"/{asset_id}/{fileName}",  // Đường dẫn tương đối từ thư mục wwwroot
+                    ObjectKey = fileName,  // Lưu tên file hoặc một khóa duy nhất khác nếu cần
+                    Size = file.Length,
                 });
             }
 
+            // Lưu vào cơ sở dữ liệu
             await _context.Media.AddRangeAsync(res);
             await _context.SaveChangesAsync();
-            return Ok(r);
+
+            return Ok(res);
         }
 
         [HttpDelete]
@@ -164,12 +215,30 @@ namespace media_services.Controllers
         public async Task<IActionResult> Delete(string media_id, [FromBody] DeleteRequest req, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(req.ObjectKey)) return BadRequest("objectKey required");
-            await _svc.DeleteAsync(req.ObjectKey, ct);
+
+            // Tìm media trong cơ sở dữ liệu
             var media = await _context.Media.FindAsync(media_id);
-            if (media == null) return BadRequest(media);
+            if (media == null) return BadRequest("Media not found");
+
+            // Xóa tệp tin khỏi hệ thống tệp (wwwroot)
+            var webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var filePath = Path.Combine(webRootPath, media.AssetId, media.ObjectKey); // Đảm bảo rằng media.ObjectKey là tên tệp
+
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath); // Xóa tệp tin khỏi hệ thống
+            }
+            else
+            {
+                return BadRequest("File not found on server.");
+            }
+
+            // Xóa media khỏi cơ sở dữ liệu
             _context.Media.Remove(media);
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            return NoContent(); // Trả về HTTP 204 No Content nếu xóa thành công
         }
+
     }
 }

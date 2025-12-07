@@ -5,7 +5,7 @@ namespace media_services.Models.MLDb;
 
 public partial class Like
 {
-    public int LikeId { get; set; }
+    public string LikeId { get; set; }
 
     public Guid PostId { get; set; }
 

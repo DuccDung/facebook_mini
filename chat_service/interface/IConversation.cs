@@ -12,5 +12,6 @@ namespace chat_service.Internal
         Task<ResponseModel<Conversation_Req>> DeleteConversation(Guid conversationId);
         Task<List<MessageModel>> GetMessageHistory(Guid conversationId , int userId);
         Task<string> FormatMessageTime(string utcIsoString);
+        Task<List<user>> GetUsersInConversation(Guid conversationId);
     }
 }

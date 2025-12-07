@@ -5,7 +5,7 @@ namespace media_services.Models.MLDb;
 
 public partial class PostShare
 {
-    public int PsId { get; set; }
+    public string PsId { get; set; }
 
     public Guid PostId { get; set; }
 

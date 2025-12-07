@@ -1,8 +1,11 @@
-﻿using Azure;
+﻿using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
+using Azure;
+using media_services.Data.MLDb;
 using media_services.Dtos;
 using media_services.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace media_services.Services
@@ -14,7 +17,6 @@ namespace media_services.Services
         Task<PostWithCommentsDto?> GetPostWithCommentsAsync(Guid postId);
         Task<PostCommentDto?> CreateCommentAsync(CreateCommentRequest req);
         Task<PostLikeInfoDto> GetPostLikeInfoAsync(Guid postId, int? accountId);
-
     }
 
     public class PostService : IPostService
@@ -22,19 +24,26 @@ namespace media_services.Services
         private readonly MediaContext _context;
         private readonly HttpClient _http;
         private readonly HttpClient _media;
-
-        public PostService(MediaContext context)
+        private readonly HttpClient _rcm_post;
+        private readonly LogDbContext _mlcontext;
+        public PostService(MediaContext context , LogDbContext ml)
         {
             _context = context;
+            _mlcontext = ml;
             _http = new HttpClient
             {
                 // BaseAddress = new Uri("https://localhost:7070/")
                 BaseAddress = new Uri("http://profile_service:8084/")
+               //  BaseAddress = new Uri("http://13.112.144.107:5005/")
             };
             _media = new HttpClient
             {
                 // BaseAddress = new Uri("https://localhost:7121/")
                 BaseAddress = new Uri("http://media_service:8086/")
+            };
+            _rcm_post = new HttpClient
+            {
+                BaseAddress = new Uri("http://13.112.144.107:7001/")
             };
         }
 
@@ -97,7 +106,7 @@ namespace media_services.Services
                 UpdateAt = post.UpdateAt
             };
 
-            dto.Comments = BuildCommentTree(comments , new List<UserProfileDto>());
+            dto.Comments = BuildCommentTree(comments, new List<UserProfileDto>());
 
             return dto;
         }
@@ -130,12 +139,25 @@ namespace media_services.Services
         // ============================
         public async Task<List<PostWithCommentsDto>> GetAllPostsWithCommentsAsync(int userId)
         {
+            var rcm_url = "feed/" + userId;
+            var rcm_res = await _rcm_post.GetAsync(rcm_url);
+            List<string> ids = new List<string>();
+            if (rcm_res.IsSuccessStatusCode)
+            {
+                var rcm_res_content = await rcm_res.Content.ReadAsStringAsync();
+                 ids = JsonConvert.DeserializeObject<List<string>>(rcm_res_content) ?? new List<string>();
+            }
             var posts = await _context.Posts
                 .AsNoTracking()
                 .OrderByDescending(p => p.CreateAt)
                 .ToListAsync();
 
-            var postIds = posts.Select(p => p.PostId).ToList();
+            var rcmPosts = posts
+              .OrderByDescending(p => ids.Contains(p.PostId.ToString()))  // Đưa các PostId có trong ids lên đầu
+              .ThenByDescending(p => p.CreateAt)  // Sắp xếp theo CreateAt sau khi đã sắp xếp theo ids
+              .ToList();
+
+            var postIds = rcmPosts.Select(p => p.PostId).ToList();
 
             // Lấy tất cả comments của tất cả post để tránh N+1 query
             var allComments = await _context.PostComments
@@ -145,7 +167,7 @@ namespace media_services.Services
                 .ToListAsync();
 
             var result = new List<PostWithCommentsDto>();
-            var userIds = posts.Select(p => p.AccountId).Distinct().ToList();
+            var userIds = rcmPosts.Select(p => p.AccountId).Distinct().ToList();
             userIds.AddRange(allComments.Select(c => c.AccountId).Distinct());
             var res = await _http.PostAsJsonAsync("api/Profiles/list", new { UserIds = userIds });
             if (!res.IsSuccessStatusCode)
@@ -155,7 +177,7 @@ namespace media_services.Services
             }
 
             var data = await res.Content.ReadFromJsonAsync<List<UserProfileDto>>();
-            foreach (var post in posts)
+            foreach (var post in rcmPosts)
             {
                 var commentsOfPost = allComments
                     .Where(c => c.PostId == post.PostId)
@@ -163,7 +185,7 @@ namespace media_services.Services
                 var profile = data?.Where(p => p.UserId == post.AccountId).FirstOrDefault();
                 var url = $"api/Media/get/by-asset?asset_id={post.PostId.ToString()}";
                 var media = await _media.GetFromJsonAsync<List<MediaItemDto>>(url);
-                var infoLike = await GetPostLikeInfoAsync(post.PostId , userId);
+                var infoLike = await GetPostLikeInfoAsync(post.PostId, userId);
                 var dto = new PostWithCommentsDto
                 {
                     PostId = post.PostId,
@@ -176,7 +198,7 @@ namespace media_services.Services
                     UpdateAt = post.UpdateAt,
                     InforLike = infoLike,
                     MediaItems = media ?? new List<MediaItemDto>(),
-                    Comments = BuildCommentTree(commentsOfPost , data ?? new List<UserProfileDto>())
+                    Comments = BuildCommentTree(commentsOfPost, data ?? new List<UserProfileDto>())
                 };
 
                 result.Add(dto);
@@ -188,7 +210,7 @@ namespace media_services.Services
         // ============================
         // 📌 Hàm build cây comment từ flat list
         // ============================
-        private List<PostCommentDto> BuildCommentTree(List<PostComment> comments , List<UserProfileDto> profiles)
+        private List<PostCommentDto> BuildCommentTree(List<PostComment> comments, List<UserProfileDto> profiles)
         {
             var dict = new Dictionary<Guid, PostCommentDto>();
             var roots = new List<PostCommentDto>();
@@ -232,6 +254,7 @@ namespace media_services.Services
         }
         public async Task<PostCommentDto?> CreateCommentAsync(CreateCommentRequest req)
         {
+           
             // 1. Kiểm tra post
             var postExists = await _context.Posts.AnyAsync(p => p.PostId == req.PostId);
             if (!postExists) return null;
@@ -260,7 +283,26 @@ namespace media_services.Services
 
             _context.PostComments.Add(comment);
             await _context.SaveChangesAsync();
-
+            try
+            {
+                var mlPostExists = await _mlcontext.Posts.AnyAsync(p => p.PostId == req.PostId);
+                if (mlPostExists)
+                {
+                    await _mlcontext.PostComments.AddAsync(new media_services.Models.MLDb.PostComment
+                    {
+                        AccountId = req.AccountId.ToString(),
+                        CommentId = comment.CommentId.ToString(),
+                        Content = comment.Content,
+                        CreateAt = DateTime.UtcNow,
+                        PostId = req.PostId,
+                    });
+                    await _mlcontext.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("bug comment: " + ex);
+            }
             // 4. Mapping sang DTO để trả về FE
             return new PostCommentDto
             {

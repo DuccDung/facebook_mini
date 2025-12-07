@@ -34,7 +34,20 @@ namespace chat_service.Controllers
                 BaseAddress = new Uri("http://profile_service:8084/")
             };
         }
-
+        [HttpGet]
+        [Route("users")]
+        public async Task<IActionResult> Friends(Guid conversationId)
+        {
+            try
+            {
+                var friends = await _conversation.GetUsersInConversation(conversationId);
+                return Ok(friends);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex);
+            }
+        }
         [HttpGet]
         [Route("test")]
         public IActionResult Tesst()
@@ -91,7 +104,7 @@ namespace chat_service.Controllers
             if (!consersations.IsSussess) return BadRequest();
             foreach (var cv in consersations.DataList ?? new List<Conversation_Res>())
             {
-                var messages =await _conversation.GetMessageHistory(cv.ConversationId, userId);
+                var messages = await _conversation.GetMessageHistory(cv.ConversationId, userId);
                 //var json = JsonConvert.SerializeObject(cv.PhotoUrl);
                 ThreadModel thread = new ThreadModel
                 {
@@ -115,7 +128,7 @@ namespace chat_service.Controllers
             }
             // fix tới đây
             return Ok(threadModels);
-          //  return Ok(consersations);
+            //  return Ok(consersations);
         }
     }
 

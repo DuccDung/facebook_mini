@@ -54,6 +54,7 @@ builder.WebHost.ConfigureKestrel(o =>
 });
 builder.Services.AddGrpc();
 var app = builder.Build();
+app.UseStaticFiles();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

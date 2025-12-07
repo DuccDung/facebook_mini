@@ -49,6 +49,7 @@ namespace media_services.Controllers
             };
             _mlcontext.Likes.Add(new Models.MLDb.Like
             {
+                LikeId = like.LikeId.ToString(),
                 PostId = like.AssetId,
                 AccountId = like.AccountId.ToString(),
                 LikeType = like.LikeType.ToString(),

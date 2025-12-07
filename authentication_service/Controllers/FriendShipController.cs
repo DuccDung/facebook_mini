@@ -102,7 +102,7 @@ namespace authentication_service.Controllers
         [Route("find")]
         public async Task<IActionResult> FindFriendByUsername(int userId, string email)
         {
-            var users = await _context.Accounts.Where(x => x.Email.Contains(email)).ToListAsync();
+            var users = await _context.Accounts.Where(x => x.Email.Contains(email) && x.AccountId != userId).ToListAsync();
             List<UserRes> res = new List<UserRes>();
             foreach (var item in users)
             {

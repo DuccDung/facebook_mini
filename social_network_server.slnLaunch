@@ -9,6 +9,14 @@
       {
         "Path": "profile_service\\profile_service.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "notification_service\\notification_service.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "chat_service\\chat_service.csproj",
+        "Action": "Start"
       }
     ]
   }

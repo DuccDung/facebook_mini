@@ -110,7 +110,7 @@
           "Port": 8083 // Cổng dịch vụ của chat_service trong Docker
         }
       ],
-      "UpstreamPathTemplate": "/api/Chat/GetConversation",
+      "UpstreamPathTemplate": "/api/Chat/InitConversationGroup",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
     },
 

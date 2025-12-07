@@ -13,17 +13,14 @@ builder.Services.AddSqlServer<NotificationDbContext>(
     builder.Configuration.GetConnectionString("SqlServer"));
 
 // add rabbitmq service
-var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+//var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+//var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
+//var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
+//var rabbitPort = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var p) ? p : 5672;
+var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "13.112.144.107";
 var rabbitUser = Environment.GetEnvironmentVariable("RABBITMQ_USER") ?? "guest";
 var rabbitPass = Environment.GetEnvironmentVariable("RABBITMQ_PASS") ?? "guest";
 var rabbitPort = int.TryParse(Environment.GetEnvironmentVariable("RABBITMQ_PORT"), out var p) ? p : 5672;
-builder.Services.AddRabbitCore(opt =>
-{
-    opt.HostName = rabbitHost;
-    opt.UserName = rabbitUser;
-    opt.Password = rabbitPass;
-    opt.Port = rabbitPort;
-});
 builder.Services.AddRabbitCore(opt =>
 {
     opt.HostName = rabbitHost;
